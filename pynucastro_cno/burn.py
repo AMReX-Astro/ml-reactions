@@ -5,7 +5,7 @@ from scipy.integrate import ode
 import cno_rhs as cno
 import matplotlib.pyplot as plt
 
-def burn(Y0, rho, T, tmax, nsave):
+def burn(X0, rho, T, tmax, nsave):
 
     r = ode(cno.rhs).set_integrator("vode", method="bdf",
                                     with_jacobian=False,
@@ -14,7 +14,7 @@ def burn(Y0, rho, T, tmax, nsave):
 
     t = 0.0
 
-    r.set_initial_value(Y0, t)
+    r.set_initial_value(X0, t)
 
     r.set_f_params(rho, T)
 
@@ -26,7 +26,7 @@ def burn(Y0, rho, T, tmax, nsave):
     O14_out = []
     O15_out = []
 
-    print(t, Y0[cno.ip], Y0[cno.io14])
+    print(t, X0[cno.ip], X0[cno.io14])
 
     istep = 1
     while r.successful() and istep <= nsave:
@@ -49,31 +49,29 @@ def burn(Y0, rho, T, tmax, nsave):
 if __name__ == "__main__":
 
     # initialize as mass fractions first
-    Y0 = np.zeros((cno.nnuc), dtype=np.float64)
+    X0 = np.zeros((cno.nnuc), dtype=np.float64)
 
-    Y0[cno.ip] = 0.7
-    Y0[cno.ihe4] = 0.28
-    Y0[cno.ic12] = 0.02
-
-    Y0[:] = Y0[:]/cno.A[:]
+    X0[cno.ip] = 0.7
+    X0[cno.ihe4] = 0.28
+    X0[cno.ic12] = 0.02
 
     rho = 10000.0
     T = 1.e8
 
     # estimate the H destruction time
-    Ydot = cno.rhs(0.0, Y0, rho, T)
+    Xdot = cno.rhs(0.0, X0, rho, T)
 
-    tmax = 10.0*np.abs(Y0[cno.ip]/Ydot[cno.ip])
+    tmax = 10.0*np.abs(X0[cno.ip]/Xdot[cno.ip])
     print("tmax: {}".format(tmax))
 
     nsteps = 100
 
-    t, Y_H, Y_He, Y_O14, Y_O15 = burn(Y0, rho, T, tmax, nsteps)
+    t, X_H, X_He, X_O14, X_O15 = burn(X0, rho, T, tmax, nsteps)
 
-    plt.loglog(t, np.array(Y_H)*cno.A[cno.ip], label="H1")
-    plt.loglog(t, np.array(Y_He)*cno.A[cno.ihe4], label="He4")
-    plt.loglog(t, np.array(Y_O14)*cno.A[cno.io14], label="O14")
-    plt.loglog(t, np.array(Y_O15)*cno.A[cno.io15], label="O15")
+    plt.loglog(t, np.array(X_H), label="H1")
+    plt.loglog(t, np.array(X_He), label="He4")
+    plt.loglog(t, np.array(X_O14), label="O14")
+    plt.loglog(t, np.array(X_O15), label="O15")
 
     plt.xlabel("time [s]")
     plt.ylabel("mass fraction, X")

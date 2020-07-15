@@ -160,7 +160,7 @@ def rhs(t, Y, rho, T):
     return rhs_eq(t, Y, rho, T)
 
 @numba.njit()
-def rhs_eq(t, Y, rho, T):
+def rhs_eq(t, X, rho, T):
 
     ip = 0
     ihe4 = 1
@@ -172,6 +172,8 @@ def rhs_eq(t, Y, rho, T):
     io14 = 7
     io15 = 8
     nnuc = 9
+
+    Y = X[:]/A[:]
 
     tf = Tfactors(T)
 
@@ -235,4 +237,6 @@ def rhs_eq(t, Y, rho, T):
        +rho*Y[ip]*Y[in14]*lambda_p_n14__o15
        )
 
-    return dYdt
+    dXdt = dYdt * A[:]
+
+    return dXdt
