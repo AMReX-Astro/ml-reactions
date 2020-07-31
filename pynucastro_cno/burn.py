@@ -5,12 +5,13 @@ from scipy.integrate import ode
 import cno_rhs as cno
 import matplotlib.pyplot as plt
 
+# integrate the reaction network forward by tmax
 def burn(X0, rho, T, tmax, nsave):
 
     r = ode(cno.rhs).set_integrator("vode", method="bdf",
                                     with_jacobian=False,
                                     atol=1.e-8, rtol=1.e-8,
-                                    nsteps = 1500000, order=5) #, min_step=dt)
+                                    nsteps = 1500000, order=5)
 
     t = 0.0
 
