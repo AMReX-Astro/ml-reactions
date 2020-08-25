@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import numpy as np
 from scipy.integrate import ode
-import cno_rhs as cno
+import cno_rhs_x as cno
 import matplotlib.pyplot as plt
 
 # integrate the reaction network forward by tmax
