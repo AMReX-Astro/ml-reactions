@@ -10,7 +10,7 @@ from __future__ import print_function
 
 import numpy as np
 from scipy.integrate import ode
-import cno_rhs as cno
+import cno_rhs_x as cno
 import matplotlib.pyplot as plt
 import pandas as pd
 from time import time
