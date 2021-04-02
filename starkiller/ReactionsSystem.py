@@ -30,6 +30,9 @@ class ReactionsSystem(object):
         eos = Eos()
         eos_state = EosType()
 
+        eos_state.state.t = self.temp
+        eos_state.state.rho = self.dens
+
         # pick a composition for normalization of Ye = 0.5 w/ abar = 12, zbar = 6
         eos_state.state.abar = 12.0
         eos_state.state.zbar = 6.0
