@@ -61,9 +61,10 @@ class ReactionsDataset(Dataset):
         
         # convert to tensors
         # we also want to propagate gradients through y, dydt, and x
-        self.x = torch.tensor(self.x, requires_grad=True)
-        self.y = torch.tensor(self.y, requires_grad=True)
-        self.dydt = torch.tensor(self.dydt, requires_grad=True)  # used in computing loss1 later
+        self.x = torch.tensor(self.x, requires_grad=True, dtype=torch.float)
+        self.y = torch.tensor(self.y, requires_grad=True, dtype=torch.float)
+        self.dydt = torch.tensor(self.dydt, requires_grad=True, 
+                                 dtype=torch.float)  # used in computing loss1 later
 
     def __len__(self):
         return len(self.x)
@@ -74,7 +75,7 @@ class ReactionsDataset(Dataset):
         y = self.y[idx,:]
         dydt = self.dydt[idx,:]
         
-        sample = {'x': x, 'y': y, 'dydt': dydt}
+        sample = {'x': x, 'y': y, 'dydt': dydt, 'idx': idx}
 
         return sample
     
