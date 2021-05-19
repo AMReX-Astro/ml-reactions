@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from TrainingHistory import TrainingHistory
 
 # DenseNet has dense layers whose sizes change as follows:
 # (n_hidden, n_hidden-dn, n_hidden-2*dn, ..., n_hidden/2, n_hidden/2+dn, ..., n_hidden)

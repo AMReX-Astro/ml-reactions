@@ -6,7 +6,12 @@ from torch.autograd import Variable
 #import torchvision.transforms.functional as TF
 
 # Standardize a data array
-def Standardize(x, mean, std, deriv=False): 
+def Standardize(x, mean=None, std=None, deriv=False): 
+    if mean is None:
+        mean = np.mean(x, axis=0)
+    if std is None:
+        std = np.std(x, axis=0)
+    
     if deriv:
         y = x / std
     else:
@@ -15,7 +20,12 @@ def Standardize(x, mean, std, deriv=False):
     return y
 
 # Normalize a data array
-def Normalize(x, x_min, x_max, deriv=False): 
+def Normalize(x, x_min=None, x_max=None, deriv=False): 
+    if x_min is None:
+        x_min = np.min(x, axis=0)
+    if x_max is None:
+        x_max = np.max(x, axis=0)
+        
     if deriv:
         y = x / (x_max - x_min)
     else:
@@ -27,7 +37,7 @@ def Normalize(x, x_min, x_max, deriv=False):
 class ReactionsDataset(Dataset): 
     """Reactions dataset."""
 
-    def __init__(self, x, y, dydt, system):
+    def __init__(self, x, y, dydt, system, normalize=False):
         """
         Args:
             x (array): solutions at t0. (input)
@@ -44,29 +54,41 @@ class ReactionsDataset(Dataset):
         self.y = y.copy()
         self.dydt = dydt.copy()
         
-        # normalization parameters
+        # normalization 
         self.dt_scale = max(x[:,0])
-        self.temp_mean = np.mean(x[:,self.net_itemp+1], axis=0)
-        self.temp_std = np.std(x[:,self.net_itemp+1], axis=0)
-        self.enuc_mean = np.mean(x[:,self.net_ienuc+1], axis=0)
-        self.enuc_std = np.std(x[:,self.net_ienuc+1], axis=0)
-        
-        # normalize dt, temperature and energy
         self.x[:,0] = self.x[:,0] / self.dt_scale
-        self.x[:,self.net_itemp+1] = Standardize(x[:,self.net_itemp+1], 
-                                               self.temp_mean, self.temp_std)
-        self.x[:,self.net_ienuc+1] = Standardize(x[:,self.net_ienuc+1], 
-                                               self.enuc_mean, self.enuc_std)
-        self.y[:,self.net_itemp] = Standardize(y[:,self.net_itemp], 
-                                             self.temp_mean, self.temp_std)
-        self.y[:,self.net_ienuc] = Standardize(y[:,self.net_ienuc], 
-                                             self.enuc_mean, self.enuc_std)
-        
         self.dydt *= self.dt_scale
-        self.dydt[:,self.net_itemp] = Standardize(self.dydt[:,self.net_itemp], 
-                                                self.temp_mean, self.temp_std, deriv=True)
-        self.dydt[:,self.net_ienuc] = Standardize(self.dydt[:,self.net_ienuc], 
-                                                self.enuc_mean, self.enuc_std, deriv=True)
+        
+        if normalize:
+            # normalize all input variables
+            x_min = np.min(self.x[:,1:], axis=0)
+            x_max = np.max(self.x[:,1:], axis=0)
+            self.x[:,1:] = Normalize(self.x[:,1:], x_min=x_min, x_max=x_max)
+            self.y = Normalize(self.y, x_min=x_min, x_max=x_max)
+            self.dydt = Normalize(self.dydt, x_min=x_min, x_max=x_max, deriv=True)
+        else:
+            # standardize temperature and energy
+            self.temp_mean = np.mean(x[:,self.net_itemp+1], axis=0)
+            self.temp_std = np.std(x[:,self.net_itemp+1], axis=0)
+            self.enuc_mean = np.mean(x[:,self.net_ienuc+1], axis=0)
+            self.enuc_std = np.std(x[:,self.net_ienuc+1], axis=0)
+        
+            # normalize temperature and energy
+            self.x[:,self.net_itemp+1] = Standardize(x[:,self.net_itemp+1], 
+                                                     mean=self.temp_mean, std=self.temp_std)
+            self.x[:,self.net_ienuc+1] = Standardize(x[:,self.net_ienuc+1], 
+                                                     mean=self.enuc_mean, std=self.enuc_std)
+            self.y[:,self.net_itemp] = Standardize(y[:,self.net_itemp], 
+                                                   mean=self.temp_mean, std=self.temp_std)
+            self.y[:,self.net_ienuc] = Standardize(y[:,self.net_ienuc], 
+                                                   mean=self.enuc_mean, std=self.enuc_std)
+        
+            self.dydt[:,self.net_itemp] = Standardize(self.dydt[:,self.net_itemp], 
+                                                      mean=self.temp_mean, std=self.temp_std, 
+                                                      deriv=True)
+            self.dydt[:,self.net_ienuc] = Standardize(self.dydt[:,self.net_ienuc], 
+                                                      mean=self.enuc_mean, std=self.enuc_std, 
+                                                      deriv=True)
         
         # convert to tensors
         # we also want to propagate gradients through y, dydt, and x
