@@ -11,6 +11,10 @@ def Standardize(x, mean=None, std=None, deriv=False):
         mean = np.mean(x, axis=0)
     if std is None:
         std = np.std(x, axis=0)
+    if np.all(std) == False:
+    # if denominator is zero
+        indices = np.where(std == 0)[0]
+        std[indices] = x[indices]
     
     if deriv:
         y = x / std
@@ -26,6 +30,13 @@ def Normalize(x, x_min=None, x_max=None, deriv=False):
     if x_max is None:
         x_max = np.max(x, axis=0)
         
+    denom = x_max - x_min
+    if np.all(denom) == False:
+    # if denominator is zero
+        indices = np.where(denom == 0)[0]
+        denom[indices] = x_max[indices]
+        x_min[indices] = 0
+    
     if deriv:
         y = x / (x_max - x_min)
     else:
@@ -46,8 +57,8 @@ class ReactionsDataset(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        self.net_itemp = system.network.net_itemp
-        self.net_ienuc = system.network.net_ienuc
+        self.net_ienuc = system.ienuc
+        self.net_idens = system.idens
         
         # copy variables
         self.x = x.copy()
@@ -61,35 +72,29 @@ class ReactionsDataset(Dataset):
         
         if normalize:
             # normalize all input variables
-            x_min = np.min(self.x[:,1:], axis=0)
-            x_max = np.max(self.x[:,1:], axis=0)
-            self.x[:,1:] = Normalize(self.x[:,1:], x_min=x_min, x_max=x_max)
+            x_min = np.min(self.x[:, 1:system.numDependent+1], axis=0)
+            x_max = np.max(self.x[:, 1:system.numDependent+1], axis=0)
+            self.x[:,1:] = Normalize(self.x[:,1:])
             self.y = Normalize(self.y, x_min=x_min, x_max=x_max)
             self.dydt = Normalize(self.dydt, x_min=x_min, x_max=x_max, deriv=True)
         else:
-            # standardize temperature and energy
-            self.temp_mean = np.mean(x[:,self.net_itemp+1], axis=0)
-            self.temp_std = np.std(x[:,self.net_itemp+1], axis=0)
+            # standardize energy and density
             self.enuc_mean = np.mean(x[:,self.net_ienuc+1], axis=0)
             self.enuc_std = np.std(x[:,self.net_ienuc+1], axis=0)
-        
-            # normalize temperature and energy
-            self.x[:,self.net_itemp+1] = Standardize(x[:,self.net_itemp+1], 
-                                                     mean=self.temp_mean, std=self.temp_std)
+            self.dens_mean = np.mean(x[:,self.net_idens+1], axis=0)
+            self.dens_std = np.std(x[:,self.net_idens+1], axis=0)
+            
             self.x[:,self.net_ienuc+1] = Standardize(x[:,self.net_ienuc+1], 
                                                      mean=self.enuc_mean, std=self.enuc_std)
-            self.y[:,self.net_itemp] = Standardize(y[:,self.net_itemp], 
-                                                   mean=self.temp_mean, std=self.temp_std)
+            self.x[:,self.net_idens+1] = Standardize(x[:,self.net_idens+1],
+                                                    mean = self.dens_mean, std=self.dens_std)
             self.y[:,self.net_ienuc] = Standardize(y[:,self.net_ienuc], 
                                                    mean=self.enuc_mean, std=self.enuc_std)
         
-            self.dydt[:,self.net_itemp] = Standardize(self.dydt[:,self.net_itemp], 
-                                                      mean=self.temp_mean, std=self.temp_std, 
-                                                      deriv=True)
             self.dydt[:,self.net_ienuc] = Standardize(self.dydt[:,self.net_ienuc], 
                                                       mean=self.enuc_mean, std=self.enuc_std, 
                                                       deriv=True)
-        
+            
         # convert to tensors
         # we also want to propagate gradients through y, dydt, and x
         self.x = torch.tensor(self.x, requires_grad=True, dtype=torch.float)
@@ -112,7 +117,7 @@ class ReactionsDataset(Dataset):
     
     def _getparam_(self):
         # get normalization parameters
-        param = {'T_mean': self.temp_mean, 'T_std': self.temp_std, 
-                 'E_mean': self.enuc_mean, 'E_std': self.enuc_std}
+        param = {'e_mean': self.enuc_mean, 'e_std': self.enuc_std, 
+                 'rho_mean': self.dens_mean, 'rho_std': self.dens_std}
         
         return param
