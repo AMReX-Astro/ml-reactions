@@ -1,0 +1,41 @@
+DOWNLOAD PYTORCH
+
+cd cpp
+wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.8.1%2Bcpu.zip
+unzip libtorch-cxx11-abi-shared-with-deps-1.8.1+cpu.zip
+
+GIT CLONE AMREX
+BUILD AMREX WITH CMAKE
+
+cd amrex
+mkdir build
+mkdir install
+cd build
+cmake -DDIM=2 -DENABLE_AMRDATA=TRUE -DENABLE_OMP=TRUE -DCMAKE_INSTALL_PREFIX=../install/ ..
+
+## MAYBE ## MODIFY --lib/cmake/AMReX/AMReXConfig.cmake-- LINE 25 WITH set(${_NAME}_FOUND TRUE) 
+
+make install
+
+GO TO DIRECTORY BETADECAY
+
+cd cpp/betadecay_example
+mkdir build
+cd build
+cmake -DCMAKE_PREFIX_PATH="/path-to-amrex-install/;/path-to-pytorch/libtorch" ../
+make -j
+
+RUN JUPYTER NOTEBOOK
+
+Open and run 'beta_decay.ipynb' notebook to get model file ('betadecay_model.pt') and test data ('test_data.txt').
+
+**Make sure that the Pytorch version used by the Jupyter Notebook is the same as the libtorch version! **
+
+NOW YOU CAN EXECUTE YOUR PROGRAM :D
+mpirun -n 1 ./main ../inputs
+
+ENJOY :)
+
+Compiling info and pytorch/c++ in general based on https://github.com/namehta4/KokkosToPytorch.git
+
+Torchscript code based on https://pytorch.org/tutorials/advanced/cpp_export.html 
