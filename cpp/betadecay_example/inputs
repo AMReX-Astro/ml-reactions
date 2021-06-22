@@ -1,0 +1,4 @@
+n_cell = 64
+max_grid_size = 64
+model_file = "../betadecay_model.pt"
+test_data_file = "../test_data.txt"
