@@ -73,6 +73,7 @@ int main (int argc, char* argv[])
         // Put input data into multifab
         MultiFab input;
         input.define(ba, dm, 1, 0);
+        Print() << "Multifab built. AMREX_SPACEDIM = " << AMREX_SPACEDIM << std::endl;
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -86,7 +87,7 @@ int main (int argc, char* argv[])
             ParallelFor(tileBox, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
                 const int index = AMREX_SPACEDIM == 2 ?
                     i*n_cell+j : (i*n_cell+j)*n_cell+k;
-                Print() << index << ",  ";
+                // Print() << index << ",  ";
                 input_arr(i, j, k, 0) = input_data[amrex::min(index, data_size-1)];
             });
         }
