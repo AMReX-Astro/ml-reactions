@@ -11,7 +11,7 @@ cd amrex
 mkdir build
 mkdir install
 cd build
-cmake -DDIM=2 -DENABLE_AMRDATA=TRUE -DENABLE_OMP=TRUE -DCMAKE_INSTALL_PREFIX=../install/ ..
+cmake -DENABLE_AMRDATA=TRUE -DENABLE_OMP=TRUE -DCMAKE_INSTALL_PREFIX=../install/ ..
 
 ## MAYBE ## MODIFY --lib/cmake/AMReX/AMReXConfig.cmake-- LINE 25 WITH set(${_NAME}_FOUND TRUE) 
 
@@ -29,7 +29,7 @@ RUN JUPYTER NOTEBOOK
 
 Open and run 'beta_decay.ipynb' notebook to get model file ('betadecay_model.pt') and test data ('test_data.txt').
 
-**Make sure that the Pytorch version used by the Jupyter Notebook is the same as the libtorch version! **
+**Make sure that the Pytorch version used by the Jupyter Notebook is the same as the libtorch version!!**
 
 NOW YOU CAN EXECUTE YOUR PROGRAM :D
 mpirun -n 1 ./main ../inputs

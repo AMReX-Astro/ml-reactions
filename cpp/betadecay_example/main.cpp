@@ -71,9 +71,7 @@ int main (int argc, char* argv[])
         FileStream.close();
 
         // Put input data into multifab
-        MultiFab input;
-        input.define(ba, dm, 1, 0);
-        Print() << "Multifab built. AMREX_SPACEDIM = " << AMREX_SPACEDIM << std::endl;
+        MultiFab input(ba, dm, 1, 0);
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -92,9 +90,33 @@ int main (int argc, char* argv[])
             });
         }
         VisMF::Write(input, "test_data_mf");
+        Print() << "Copying of input multifab complete." << std::endl;
 
-        // Convert multifab to tensor
+        // retrieve size of multifab
+        const auto nbox = geom.Domain().bigEnd();
+        // std::printf("AMREX_SPACEDIM = %d, nx = %d, ny = %d, nz = %d \n",
+        //             AMREX_SPACEDIM, nbox[0], nbox[1], nbox[2]);
 
+        // // Copy input multifab to torch tensor
+        at::Tensor t1 = torch::zeros({(nbox[0]+1)*(nbox[1]+1)*(nbox[2]+1), 1});
+#ifdef USE_AMREX_CUDA
+        t1 = t1.to(torch::kCUDA);
+#endif
+
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+        for (MFIter mfi(input, TilingIfNotGPU()); mfi.isValid(); ++mfi)
+        {
+            const Box& tileBox = mfi.tilebox();
+            auto const& input_arr = input.array(mfi);
+
+            ParallelFor(tileBox, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                const int index = AMREX_SPACEDIM == 2 ?
+                    i*(nbox[1]+1)+j : (i*(nbox[1]+1)+j)*(nbox[2]+1)+k;
+                t1[index][0] = input_arr(i, j, k, 0);
+          });
+        }
 
         // Load pytorch module via torch script
         torch::jit::script::Module module;
@@ -109,7 +131,36 @@ int main (int argc, char* argv[])
 
         std::cout << "Model loaded.\n";
 
-        //
+        // Evaluate torch data
+        std::vector<torch::jit::IValue> inputs_torch{t1};
+        at::Tensor outputs_torch = module.forward(inputs_torch).toTensor();
+        std::cout << "example output: "
+                  << outputs_torch.slice(/*dim=*/0, /*start=*/0, /*end=*/5) << '\n';
+#ifdef USE_AMREX_CUDA
+        outputs_torch = outputs_torch.to(torch::kCUDA);
+#endif
+
+        // Copy torch tensor to output multifab
+        MultiFab output(ba, dm, 2, 0);
+
+#ifdef _OPENMP
+#pragma omp parallel if (Gpu::notInLaunchRegion())
+#endif
+        for (MFIter mfi(output, TilingIfNotGPU()); mfi.isValid(); ++mfi)
+        {
+            const Box& tileBox = mfi.tilebox();
+            auto const& output_arr = output.array(mfi);
+
+            ParallelFor(tileBox, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+                const int index = AMREX_SPACEDIM == 2 ?
+                    i*(nbox[1]+1)+j : (i*(nbox[1]+1)+j)*(nbox[2]+1)+k;
+                output_arr(i, j, k, 0) = outputs_torch[index][0].item<double>();
+                output_arr(i, j, k, 1) = outputs_torch[index][1].item<double>();
+          });
+        }
+        VisMF::Write(output, "output_mf");
+
+        Print() << "Model evaluation complete." << std::endl;
     }
 
     amrex::Finalize();
