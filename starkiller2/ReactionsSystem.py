@@ -12,7 +12,12 @@ class ReactionsSystem(object):
         self.network = Network()
         self.integrator = Integrator()
         self.init_state(dens, temp, end_time)
-        self.numDependent = self.network.nspec + 2
+        
+        self.numDependent = self.network.nspec + 1
+        self.numIndependent = self.network.nspec + 2
+        self.ienuc = self.network.nspec
+        self.idens = self.network.nspec + 1
+        self.itemp = self.network.nspec + 2
 
     def init_state(self, dens, temp, end_time):
         # Input sampling domain & scaling
@@ -25,9 +30,9 @@ class ReactionsSystem(object):
     # Get the solution given time t
     # t is a vector containing the times at which
     # we want to evaluate the System solution.
-    def sol(self, t):
+    def sol(self, t, initData=False):
         num_time = len(t)
-        y = np.zeros((num_time, self.network.nspec+2))
+        y = np.zeros((num_time, self.numIndependent+1)) # nspec+energy+density + temperature for rhs
         
         for i, time in enumerate(t):
             # get the time
@@ -51,23 +56,45 @@ class ReactionsSystem(object):
             # set the solution values
             for n in range(self.network.nspec):
                 y[i][n] = state_out.state.xn[n]
-            y[i][self.network.net_itemp] = state_out.state.t
-            y[i][self.network.net_ienuc] = state_out.state.e
+            y[i][self.ienuc] = state_out.state.e
+            y[i][self.idens] = state_out.state.rho
+            y[i][self.itemp] = state_out.state.t
         
-        return y
+        if initData:
+            # want all variables
+            return y
+        else:
+            return y[:,0:self.numDependent]
 
     # Get the solution rhs given state y
     def rhs(self, y):
         num_y = len(y)
-        dydt = np.zeros((num_y, self.network.nspec+2))
+        dydt = np.zeros((num_y, self.numDependent)) # nspec+energy
 
         for i, yi in enumerate(y):
+#             # construct an eos type to compute temperature
+#             eos_state = EosType()
+            
+#             # set density, energy, and mass fractions
+#             eos_state.state.rho = max(yi[self.idens], 0.0)
+#             eos_state.state.e = max(yi[self.ienuc], 0.0)
+#             for n in range(self.network.nspec):
+#                 eos_state.state.xn[n] = max(yi[n], 0.0)
+
+#             # get temperature
+#             eos = Eos()
+#             eos.evaluate(eos_state.eos_input_re, eos_state)
+#             temp = eos_state.state.t
+            
+#             if i<5:
+#                 print(eos_state.state.rho, eos_state.state.e, eos_state.state.t)
+            
             # construct a burn type
             state = BurnType()
 
             # set density & temperature
-            state.state.rho = self.dens
-            state.state.t = max(yi[self.network.net_itemp], 0.0)
+            state.state.rho = max(yi[self.idens], 0.0)
+            state.state.t = max(yi[self.itemp], 0.0)
 
             # mass fractions
             for n in range(self.network.nspec):
@@ -80,9 +107,8 @@ class ReactionsSystem(object):
             f = self.network.rhs_to_x(state.ydot)
             for n in range(self.network.nspec):
                 dydt[i][n] = f[n]
-
-            dydt[i][self.network.net_itemp] = f[self.network.net_itemp] 
-            dydt[i][self.network.net_ienuc] = f[self.network.net_ienuc] 
+ 
+            dydt[i][self.ienuc] = f[self.network.net_ienuc]
             
         return dydt
 
@@ -97,10 +123,12 @@ class ReactionsSystem(object):
     
         # return (dt, y0, yn)
         if t[index1] < t[index2]:
-            y0 = np.concatenate(([t[index2]-t[index1]], y[index1,:]), axis=None)
+            y0 = np.concatenate(([t[index2]-t[index1]], y[index1,:]),
+                                axis=None)
             return (y0, y[index2,:], t[index2])
         else: 
-            y0 = np.concatenate(([t[index1]-t[index2]], y[index2,:]), axis=None)
+            y0 = np.concatenate(([t[index1]-t[index2]], y[index2,:]),
+                                axis=None)
             return (y0, y[index1,:], t[index1])
     
     # compute truth solutions from t=0 and generate pairs of solutions to 
@@ -111,14 +139,14 @@ class ReactionsSystem(object):
         t0 = np.linspace(0, self.end_time, NumSamples)
         
         # get the truth solution as a function of t
-        y0 = self.sol(t0)
+        y0 = self.sol(t0, initData=True)
         
         # get pairs of truth solutions (input state + dt, output truth state, time)
-        x = np.empty((NumSamples, y0.shape[1]+1))
-        y = np.empty((NumSamples, y0.shape[1]))
-        t = np.empty((NumSamples, 1))
+        x = np.empty((2*NumSamples, y0.shape[1]+1))
+        y = np.empty((2*NumSamples, y0.shape[1])) 
+        t = np.empty((2*NumSamples, 1))
 
-        for i in range(NumSamples):
+        for i in range(2*NumSamples):
             x[i,:], y[i,:], t[i] = self.getPair(t0, y0)
         
         return (x, y, t)
