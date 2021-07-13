@@ -56,13 +56,11 @@ react_data = ReactDataset2(data_path, input_prefix, output_prefix, plotfile_pref
 #Normalize density, temperature, and enuc
 dens_fac = torch.max(react_data.input_data[:, 14, :])
 temp_fac = torch.max(react_data.input_data[:, 15, :])
-enuc_fac = torch.max(react_data.output_data[:, 14, :])
+enuc_fac = torch.max(react_data.output_data[:, 13, :])
 
 react_data.input_data[:, 14, :]  = react_data.input_data[:, 14, :]/dens_fac
 react_data.input_data[:, 15, :]  = react_data.input_data[:, 15, :]/temp_fac
-react_data.output_data[:, 14, :] = react_data.output_data[:, 14, :]/enuc_fac
-
-react_data.cut_data_set(2)
+react_data.output_data[:, 13, :] = react_data.output_data[:, 13, :]/enuc_fac
 
 
 
@@ -84,17 +82,14 @@ test_loader = DataLoader(dataset=test_set, batch_size=16, shuffle=True)
 
 from networks import Net, OC_Net
 
-net = Net(16, 16, 32, 16, 15)
+net = Net(react_data.input_data.shape[1], 16, 32, 16, react_data.output_data.shape[1])
 
 # Hyperparameters
-num_classes = 26
 learning_rate = 1e1
-batch_size = 5
 if DEBUG_MODE:
     num_epochs = 5
 else:
-    num_epochs = 30
-input_size = 11
+    num_epochs = 100
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -102,7 +97,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 BATCHSIZE = 16
-CLASSES = 15
+CLASSES = react_data.output_data.shape[1]
 EPOCHS = 10
 LOG_INTERVAL = 10
 N_TRAIN_EXAMPLES = BATCHSIZE * 30
@@ -114,8 +109,10 @@ DROPOUT_RATE = [0, 0.5]
 LEARNING_RATE = [1e-7, 1e-1]
 OPTIMIZERS = ["Adam", "RMSprop", "SGD"]
 #optimizer study
-
-n_trials=5
+if DEBUG_MODE:
+    n_trials = 10
+else:
+    n_trials=250
 timeout=600
 
 from hyperparamter_optimization import do_h_opt

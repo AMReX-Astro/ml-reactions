@@ -34,7 +34,7 @@ class ReactDataset2(Dataset):
         self.output_files = self.get_files(data_path, output_prefix)
 
         print("Loading Input Files...")
-        self.input_data, self.input_break_file  = self.load_files(self.input_files)
+        self.input_data, self.input_break_file  = self.load_files(self.input_files, inputs=True)
         print("Loading Output Files...")
         self.output_data, self.output_break_file = self.load_files(self.output_files)
 
@@ -73,7 +73,7 @@ class ReactDataset2(Dataset):
         return data_files
 
 
-    def load_files(self, file_list):
+    def load_files(self, file_list, inputs=False):
 
         break_file = None
 
@@ -102,9 +102,11 @@ class ReactDataset2(Dataset):
 
             if j == 0:
                 #dt
-                dt_tensor = dt*torch.ones([1,1,data.shape[1]])
+                if inputs:
+                    dt_tensor = dt*torch.ones([1,1,data.shape[1]])
                 data = torch.from_numpy(data.reshape((1,data.shape[0],data.shape[1])))
-                data = torch.cat((dt_tensor,data), dim=1)
+                if inputs:
+                    data = torch.cat((dt_tensor,data), dim=1)
 
                 data_set = data
             else:
@@ -112,10 +114,13 @@ class ReactDataset2(Dataset):
                 try:
                     #dt
                     NUM_GRID_CELLS = data_set.shape[2]
-                    dt_tensor = dt*torch.ones([1,1,data.shape[1]])
+                    if inputs:
+                        dt_tensor = dt*torch.ones([1,1,data.shape[1]])
+
                     data = torch.from_numpy(data.reshape((1,data.shape[0],data.shape[1])))
                     #print(data.shape)
-                    data = torch.cat((dt_tensor,data), dim=1)
+                    if inputs:
+                        data = torch.cat((dt_tensor,data), dim=1)
 
                     #If we have more data - cut data
                     if data.shape[2] > NUM_GRID_CELLS:
@@ -130,9 +135,11 @@ class ReactDataset2(Dataset):
 
                             data[i,:] = np.array(ad[field])
                         data = torch.from_numpy(data.reshape((1,data.shape[0],data.shape[1])))
-                        dt_tensor = dt*torch.ones([1,1,NUM_GRID_CELLS])
+                        if inputs:
+                            dt_tensor = dt*torch.ones([1,1,NUM_GRID_CELLS])
                         data = data[:, : , :NUM_GRID_CELLS]
-                        data = torch.cat((dt_tensor,data), dim=1)
+                        if inputs:
+                            data = torch.cat((dt_tensor,data), dim=1)
 
 
                     #z2 = data.reshape((1,data.shape[0],data.shape[1]))
