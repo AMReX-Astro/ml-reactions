@@ -20,9 +20,10 @@ import gc
 
 class ReactDataset2(Dataset):
 
-    def __init__(self, data_path, input_prefix, output_prefix, plotfile_prefix):
+    def __init__(self, data_path, input_prefix, output_prefix, plotfile_prefix, DEBUG_MODE=False):
         #loading data
         #Load input and output data
+        self.DEBUG_MODE = DEBUG_MODE
         self.input_prefix = input_prefix
         self.output_prefix = output_prefix
         self.data_path = data_path
@@ -32,16 +33,20 @@ class ReactDataset2(Dataset):
         self.input_files  = self.get_files(data_path, input_prefix)
         self.output_files = self.get_files(data_path, output_prefix)
 
-        gc.disable()
         print("Loading Input Files...")
         self.input_data, self.input_break_file  = self.load_files(self.input_files)
         print("Loading Output Files...")
         self.output_data, self.output_break_file = self.load_files(self.output_files)
-        gc.enable()
 
         #we want them to be the same length - so cut off data if we need to
-        ind_in = self.input_files.index(self.input_break_file)
-        ind_out = self.output_files.index(self.output_break_file)
+
+        if (self.input_break_file is None) or (self.output_break_file is None):
+            ind_in = len(self.input_files)
+            ind_out = len(self.output_files)
+        else:
+            ind_in = self.input_files.index(self.input_break_file)
+            ind_out = self.output_files.index(self.output_break_file)
+
 
         if ind_in <= ind_out:
             ind = ind_in
@@ -62,6 +67,9 @@ class ReactDataset2(Dataset):
         for data in data_files:
             if data[-7:] == 'endstep':
                 data_files.remove(data)
+
+        if self.DEBUG_MODE:
+            data_files = data_files[:5]
         return data_files
 
 
