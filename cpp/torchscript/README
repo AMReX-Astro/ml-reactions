@@ -11,6 +11,12 @@ GO TO DIRECTORY /TORCHSCRIPT
 cd torchscript
 make
 
+RUN JUPYTER NOTEBOOK
+
+Open and run 'beta_decay.ipynb' notebook to get model file ('betadecay_model.pt') and test data ('test_data.txt').
+
+**Make sure that the Pytorch version used by the Jupyter Notebook is the same as the libtorch version!!**
+
 YOU CAN EXECUTE YOUR PROGRAM :D
 mpirun -n 1 ./ml-betadecay2d.gnu.MPI.ex inputs
 
@@ -19,5 +25,5 @@ ENJOY :)
 Compiling info and pytorch/c++ in general based on https://github.com/namehta4/KokkosToPytorch.git
 
 <!---
-Classification code based on https://github.com/mhubii/libtorch_custom_dataset.git
+Torchscript code based on https://pytorch.org/tutorials/advanced/cpp_export.html 
 -->

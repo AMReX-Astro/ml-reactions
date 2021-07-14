@@ -1,6 +1,6 @@
-MLREACTIONS_HOME ?= /home/fanduomi/CCSE/ml-reactions
+MLREACTIONS_HOME ?= /home/dorefan/ml-reactions
 
-TOP := /home/fanduomi/CCSE
+TOP := /home/dorefan
 
 # AMReX is needed to compile code.
 
@@ -22,8 +22,6 @@ ifeq ($(USE_CUDA),TRUE)
 endif
 
 include $(AMREX_HOME)/Tools/GNUMake/Make.defs
-
-MLREACTIONS_AUTO_SOURCE_DIR := $(TmpBuildDir)/mlreactions_sources/$(optionsSuffix).EXE
 
 all: $(executable)
 	@echo SUCCESS
@@ -54,22 +52,22 @@ Blocs   += $(foreach dir, $(Bdirs), $(MLREACTIONS_HOME)/$(dir))
 # directories into INCLUDE_LOCATIONS and LIBRARY_LOCATIONS for us,
 # so we don't need to do it here
 
-PYTORCH_ROOT := $(MLREACTIONS_HOME)/cpp/libtorch
+PYTORCH_ROOT := $(MLREACTIONS_HOME)/cpp/pytorch
 
-TORCH_LIBPATH = $(PYTORCH_ROOT)/lib
+TORCH_LIBPATH = $(PYTORCH_ROOT)/build/lib
 
 ifeq ($(USE_CUDA),TRUE)
   TORCH_LIBS = -ltorch -lc10 -lc10_cuda -lcuda  # -lcaffe2 -lcaffe2_gpu -lnvrtc -lnvToolsExt -lnccl -lmkldnn -lmkl_rt
 else
-  TORCH_LIBS = -ltorch -ltorch_cpu -lc10 # -lcaffe2
+  TORCH_LIBS = -ltorch -ltorch_cpu -lc10 #-lcaffe2
 endif
 
-INCLUDE_LOCATIONS += $(PYTORCH_ROOT)/include \
-                     $(PYTORCH_ROOT)/include/torch/csrc/api/include
+INCLUDE_LOCATIONS += $(PYTORCH_ROOT)/torch/include \
+                     $(PYTORCH_ROOT)/torch/include/torch/csrc/api/include
 LIBRARY_LOCATIONS += $(TORCH_LIBPATH)
 
 DEFINES += -D_GLIBCXX_USE_CXX11_ABI=1
-LDFLAGS += -Wl,-R$(TORCH_LIBPATH) $(TORCH_LIBS)
+LDFLAGS += -Wl,-rpath=$(TORCH_LIBPATH) $(TORCH_LIBS)
 
 #------------------------------------------------------------------------------
 # AMReX
@@ -102,15 +100,6 @@ VPATH_LOCATIONS   += $(Blocs)
 #include $(AMREX_HOME)/Src/LinearSolvers/C_to_F_MG/Make.package
 #include $(AMREX_HOME)/Src/LinearSolvers/F_MG/FParallelMG.mak
 #include $(AMREX_HOME)/Src/F_BaseLib/FParallelMG.mak
-
-
-#------------------------------------------------------------------------------
-# make generated source files location
-#------------------------------------------------------------------------------
-
-VPATH_LOCATIONS += $(MLREACTIONS_AUTO_SOURCE_DIR)
-INCLUDE_LOCATIONS += $(MLREACTIONS_AUTO_SOURCE_DIR)
-
 
 #------------------------------------------------------------------------------
 # runtime parameters
@@ -178,8 +167,7 @@ endif
 
 clean::
 	$(SILENT) $(RM) AMReX_buildInfo.cpp
-	$(SILENT) $(RM) $(MLREACTIONS_AUTO_SOURCE_DIR)/*.H $(MLREACTIONS_AUTO_SOURCE_DIR)/*.[fF]90
-
+	
 clean::
 	@if [ -L helm_table.dat ]; then rm -f helm_table.dat; fi
 
