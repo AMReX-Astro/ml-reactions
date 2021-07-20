@@ -52,9 +52,9 @@ Blocs   += $(foreach dir, $(Bdirs), $(MLREACTIONS_HOME)/$(dir))
 # directories into INCLUDE_LOCATIONS and LIBRARY_LOCATIONS for us,
 # so we don't need to do it here
 
-PYTORCH_ROOT := $(MLREACTIONS_HOME)/cpp/pytorch
+PYTORCH_ROOT := $(MLREACTIONS_HOME)/cpp/libtorch
 
-TORCH_LIBPATH = $(PYTORCH_ROOT)/build/lib
+TORCH_LIBPATH = $(PYTORCH_ROOT)/lib
 
 ifeq ($(USE_CUDA),TRUE)
   TORCH_LIBS = -ltorch -lc10 -lc10_cuda -lcuda  # -lcaffe2 -lcaffe2_gpu -lnvrtc -lnvToolsExt -lnccl -lmkldnn -lmkl_rt
@@ -62,8 +62,8 @@ else
   TORCH_LIBS = -ltorch -ltorch_cpu -lc10 #-lcaffe2
 endif
 
-INCLUDE_LOCATIONS += $(PYTORCH_ROOT)/torch/include \
-                     $(PYTORCH_ROOT)/torch/include/torch/csrc/api/include
+INCLUDE_LOCATIONS += $(PYTORCH_ROOT)/include \
+                     $(PYTORCH_ROOT)/include/torch/csrc/api/include
 LIBRARY_LOCATIONS += $(TORCH_LIBPATH)
 
 DEFINES += -D_GLIBCXX_USE_CXX11_ABI=1
