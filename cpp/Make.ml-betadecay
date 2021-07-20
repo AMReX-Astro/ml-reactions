@@ -67,7 +67,7 @@ INCLUDE_LOCATIONS += $(PYTORCH_ROOT)/include \
 LIBRARY_LOCATIONS += $(TORCH_LIBPATH)
 
 DEFINES += -D_GLIBCXX_USE_CXX11_ABI=1
-LDFLAGS += -Wl,-rpath=$(TORCH_LIBPATH) $(TORCH_LIBS)
+LDFLAGS += -Wl,--no-as-needed,-rpath=$(TORCH_LIBPATH) $(TORCH_LIBS)
 
 #------------------------------------------------------------------------------
 # AMReX

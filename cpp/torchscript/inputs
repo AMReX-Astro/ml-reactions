@@ -1,4 +1,4 @@
 n_cell = 8
 max_grid_size = 4
-model_file = "../betadecay_model.pt"
-test_data_file = "../test_data.txt"
+model_file = "betadecay_model.pt"
+test_data_file = "test_data.txt"
