@@ -98,7 +98,12 @@ int main (int argc, char* argv[])
         //             AMREX_SPACEDIM, nbox[0], nbox[1], nbox[2]);
 
         // // Copy input multifab to torch tensor
+#if AMREX_SPACEDIM == 2
+	at::Tensor t1 = torch::zeros({(nbox[0]+1)*(nbox[1]+1), 1});
+#elif AMREX_SPACEDIM == 3
         at::Tensor t1 = torch::zeros({(nbox[0]+1)*(nbox[1]+1)*(nbox[2]+1), 1});
+#endif
+	
 #ifdef USE_AMREX_CUDA
         t1 = t1.to(torch::kCUDA);
 #endif

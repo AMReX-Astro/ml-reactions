@@ -32,10 +32,10 @@ DEFINES += -DCRSEGRNDOMP
 USE_MG = FALSE
 
 #------------------------------------------------------------------------------
-# betadecay/torchscript directories
+# betadecay_makefile directories
 #------------------------------------------------------------------------------
 
-Bdirs 	:= cpp/torchscript
+Bdirs 	:= cpp/betadecay_makefile
 
 # add / define any special physics we need
 #

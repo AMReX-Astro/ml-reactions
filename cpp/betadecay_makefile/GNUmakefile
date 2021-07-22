@@ -15,4 +15,4 @@ MLREACTIONS_HOME  := ../..
 Bpack   := ./Make.package
 Blocs   := .
 
-include $(MLREACTIONS_HOME)/cpp/Make.ml-betadecay
+include $(MLREACTIONS_HOME)/cpp/betadecay_makefile/Make.ml-betadecay
