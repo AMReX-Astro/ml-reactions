@@ -20,9 +20,10 @@ import gc
 
 class ReactDataset2(Dataset):
 
-    def __init__(self, data_path, input_prefix, output_prefix, plotfile_prefix):
+    def __init__(self, data_path, input_prefix, output_prefix, plotfile_prefix, DEBUG_MODE=False):
         #loading data
         #Load input and output data
+        self.DEBUG_MODE = DEBUG_MODE
         self.input_prefix = input_prefix
         self.output_prefix = output_prefix
         self.data_path = data_path
@@ -32,16 +33,20 @@ class ReactDataset2(Dataset):
         self.input_files  = self.get_files(data_path, input_prefix)
         self.output_files = self.get_files(data_path, output_prefix)
 
-        gc.disable()
         print("Loading Input Files...")
-        self.input_data, self.input_break_file  = self.load_files(self.input_files)
+        self.input_data, self.input_break_file  = self.load_files(self.input_files, inputs=True)
         print("Loading Output Files...")
         self.output_data, self.output_break_file = self.load_files(self.output_files)
-        gc.enable()
 
         #we want them to be the same length - so cut off data if we need to
-        ind_in = self.input_files.index(self.input_break_file)
-        ind_out = self.output_files.index(self.output_break_file)
+
+        if (self.input_break_file is None) or (self.output_break_file is None):
+            ind_in = len(self.input_files)
+            ind_out = len(self.output_files)
+        else:
+            ind_in = self.input_files.index(self.input_break_file)
+            ind_out = self.output_files.index(self.output_break_file)
+
 
         if ind_in <= ind_out:
             ind = ind_in
@@ -62,10 +67,13 @@ class ReactDataset2(Dataset):
         for data in data_files:
             if data[-7:] == 'endstep':
                 data_files.remove(data)
+
+        if self.DEBUG_MODE:
+            data_files = data_files[:5]
         return data_files
 
 
-    def load_files(self, file_list):
+    def load_files(self, file_list, inputs=False):
 
         break_file = None
 
@@ -94,9 +102,11 @@ class ReactDataset2(Dataset):
 
             if j == 0:
                 #dt
-                dt_tensor = dt*torch.ones([1,1,data.shape[1]])
+                if inputs:
+                    dt_tensor = dt*torch.ones([1,1,data.shape[1]])
                 data = torch.from_numpy(data.reshape((1,data.shape[0],data.shape[1])))
-                data = torch.cat((dt_tensor,data), dim=1)
+                if inputs:
+                    data = torch.cat((dt_tensor,data), dim=1)
 
                 data_set = data
             else:
@@ -104,10 +114,13 @@ class ReactDataset2(Dataset):
                 try:
                     #dt
                     NUM_GRID_CELLS = data_set.shape[2]
-                    dt_tensor = dt*torch.ones([1,1,data.shape[1]])
+                    if inputs:
+                        dt_tensor = dt*torch.ones([1,1,data.shape[1]])
+
                     data = torch.from_numpy(data.reshape((1,data.shape[0],data.shape[1])))
                     #print(data.shape)
-                    data = torch.cat((dt_tensor,data), dim=1)
+                    if inputs:
+                        data = torch.cat((dt_tensor,data), dim=1)
 
                     #If we have more data - cut data
                     if data.shape[2] > NUM_GRID_CELLS:
@@ -122,9 +135,11 @@ class ReactDataset2(Dataset):
 
                             data[i,:] = np.array(ad[field])
                         data = torch.from_numpy(data.reshape((1,data.shape[0],data.shape[1])))
-                        dt_tensor = dt*torch.ones([1,1,NUM_GRID_CELLS])
+                        if inputs:
+                            dt_tensor = dt*torch.ones([1,1,NUM_GRID_CELLS])
                         data = data[:, : , :NUM_GRID_CELLS]
-                        data = torch.cat((dt_tensor,data), dim=1)
+                        if inputs:
+                            data = torch.cat((dt_tensor,data), dim=1)
 
 
                     #z2 = data.reshape((1,data.shape[0],data.shape[1]))
