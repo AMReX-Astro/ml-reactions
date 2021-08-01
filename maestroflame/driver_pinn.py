@@ -28,7 +28,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DEBUG_MODE = True
 DO_PLOTTING = True
 SAVE_MODEL = False
-DO_HYPER_OPTIMIZATION = False
+DO_HYPER_OPTIMIZATION = False #TODO
 
 
 # ------------------------ DATA --------------------------------------------
@@ -190,7 +190,6 @@ cost_per_epoc_test = []
 different_loss_metrics = [] #list of arrays of the various loss metrics defined in criterion
 # Train Network
 
-#try: #try block so you can control c out of it and the model will still be saved.
 for epoch in range(num_epochs):
     losses = []
     plotting_losses = []
@@ -223,10 +222,6 @@ for epoch in range(num_epochs):
         losses.append(loss.item())
         diff_losses.append(array_loss)
 
-        with torch.no_grad():
-            loss_plot = criterion_plotting(prediction, targets)
-            plotting_losses.append(loss_plot.item())
-
         # backward
         optimizer.zero_grad()
         loss.backward()
@@ -235,39 +230,48 @@ for epoch in range(num_epochs):
         optimizer.step()
 
 
+        #PLOTTING TERMS
+        loss_plot = criterion_plotting(prediction, targets)
+        plotting_losses.append(loss_plot.item())
+
+        loss_c = component_loss_f(prediction, targets[:, :nnuc+1])
+        #L1 loss bc big errors at first squaring big numbers results in nans
+        dloss_c = component_loss_f_L1(dXdt, targets[:, nnuc+1:])
+
+        if batch_idx == 0:
+            component_loss = loss_c
+            d_component_loss = dloss_c
+
+        else:
+            component_loss = component_loss + loss_c
+            d_component_loss = d_component_loss + dloss_c
+
+
+
+
 
     print(f"Cost at epoch {epoch} is {sum(losses) / len(losses)}")
     #Cost per epoc
+    cost_per_epoc.append(sum(plotting_losses) / len(plotting_losses))
+
+    #cost_per_epoc.append(sum(losses) / len(losses))
+    component_losses_train.append(component_loss/batch_idx)
+    d_component_losses_train.append(d_component_loss/batch_idx)
+
+    diff_losses = np.array(diff_losses)
+    different_loss_metrics.append(diff_losses.sum(axis=0)/len(losses))
+
 
     if DO_PLOTTING:
-        #with torch.no_grad():
-        cost_per_epoc.append(sum(plotting_losses) / len(plotting_losses))
 
-
-        diff_losses = np.array(diff_losses)
-        print(diff_losses.shape)
-        print(diff_losses.sum(axis=0).shape)
-        different_loss_metrics.append(diff_losses.sum(axis=0)/len(losses))
-
-
-
-        #Evaulate NN on testing data.
         for batch_idx, (data, targets) in enumerate(test_loader):
             # forward
+            data.requires_grad=True
+
             prediction = model(data)
             loss = criterion_plotting(prediction, targets)
             losses.append(loss.item())
 
-        cost_per_epoc_test.append(sum(losses) / len(losses))
-
-
-
-        #Component wise error testing data
-        for batch_idx, (data, targets) in enumerate(test_loader):
-
-            data.requires_grad=True
-            prediction = model(data)
-
             # calculate derivatives
             dXdt = torch.zeros_like(prediction)
             for n in range(nnuc+1):
@@ -279,59 +283,29 @@ for epoch in range(num_epochs):
                 dXdt[:, n] = data.grad.clone()[:, 0]
                 data.grad.data.zero_()
 
-            loss = component_loss_f(prediction, targets[:, :nnuc+1])
+
+            # -- Component and Deritivave component loss
+            loss_c = component_loss_f(prediction, targets[:, :nnuc+1])
             #L1 loss bc big errors at first squaring big numbers results in nans
-            dloss = component_loss_f_L1(dXdt, targets[:, nnuc+1:])
+            dloss_c = component_loss_f_L1(dXdt, targets[:, nnuc+1:])
 
             if batch_idx == 0:
-                component_loss = loss
-                d_component_loss = dloss
+                component_loss = loss_c
+                d_component_loss = dloss_c
             else:
-                component_loss = component_loss + loss
-                d_component_loss = d_component_loss + dloss
+                component_loss = component_loss + loss_c
+                d_component_loss = d_component_loss + dloss_c
 
+
+
+
+        cost_per_epoc_test.append(sum(losses) / len(losses))
         component_losses_test.append(component_loss/batch_idx)
         d_component_losses_test.append(d_component_loss/batch_idx)
 
 
-        #Component wise error training data
-        for batch_idx, (data, targets) in enumerate(train_loader):
-            data.requires_grad=True
-            prediction = model(data)
-
-            # calculate derivatives
-            dXdt = torch.zeros_like(prediction)
-            for n in range(nnuc+1):
-                if data.grad is not None:
-                    #sets componnents to zero if not already zero
-                    data.grad.data.zero_()
-
-                prediction[:, n].backward(torch.ones_like(prediction[:,n]), retain_graph=True)
-                dXdt[:, n] = data.grad.clone()[:, 0]
-                data.grad.data.zero_()
-
-
-            loss = component_loss_f(prediction, targets[:, :nnuc+1])
-            #L1 loss bc big errors at first squaring big numbers results in nans
-            dloss = component_loss_f_L1(dXdt, targets[:, nnuc+1:])
-
-            if batch_idx == 0:
-                component_loss = loss
-                d_component_loss = dloss
-
-            else:
-                component_loss = component_loss + loss
-                d_component_loss = d_component_loss + dloss
-
-        component_losses_train.append(component_loss/batch_idx)
-        d_component_losses_train.append(d_component_loss/batch_idx)
-
-# except KeyboardInterrupt:
-#     #plotting will error most likely if this doesn't finish properly
-#     DO_PLOTTING=False
-#     pass
-
 #convert these which are list of tensors to just a tenosr now.
+print(component_losses_train)
 component_loss_train = torch.zeros(len(component_losses_train), len(component_losses_train[0]))
 for i in range(len(component_losses_train)):
     component_loss_train[i, :] = component_losses_train[i]

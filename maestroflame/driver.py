@@ -202,7 +202,6 @@ component_losses_train = [] #stores component wise loss at each epoch (train dat
 cost_per_epoc_test = []
 # Train Network
 
-#try: #try block so you can control c out of it and the model will still be saved.
 for epoch in range(num_epochs):
     losses = []
     plotting_losses = []
@@ -213,14 +212,21 @@ for epoch in range(num_epochs):
         targets = targets.to(device=device)
 
         # forward
-        scores = model(data)
-        loss = criterion(scores, targets)
+        pred = model(data)
+        loss = criterion(pred, targets)
 
         losses.append(loss.item())
 
-        with torch.no_grad():
-            loss_plot = criterion_plotting(scores, targets)
-            plotting_losses.append(loss_plot.item())
+        if DO_PLOTTING:
+            with torch.no_grad():
+                loss_plot = criterion_plotting(pred, targets)
+                plotting_losses.append(loss_plot.item())
+
+                loss_c = component_loss_f(pred, targets)
+                if batch_idx == 0:
+                    component_loss = loss_c
+                else:
+                    component_loss = component_loss + loss_c
 
         # backward
         optimizer.zero_grad()
@@ -232,48 +238,28 @@ for epoch in range(num_epochs):
 
 
     print(f"Cost at epoch {epoch} is {sum(losses) / len(losses)}")
-    #Cost per epoc
+    component_losses_train.append(component_loss/batch_idx)
+    cost_per_epoc.append(sum(plotting_losses) / len(plotting_losses))
 
     if DO_PLOTTING:
-        with torch.no_grad():
-            cost_per_epoc.append(sum(plotting_losses) / len(plotting_losses))
+
+        #Evaulate NN on testing data.
+        for batch_idx, (data, targets) in enumerate(test_loader):
+            # forward
+            pred = model(data)
+            loss = criterion_plotting(pred, targets)
+            losses.append(loss.item())
+
+            loss_c = component_loss_f(pred, targets)
+            if batch_idx == 0:
+                component_loss = loss_c
+            else:
+                component_loss = component_loss + loss_c
+
+        cost_per_epoc_test.append(sum(losses) / len(losses))
+        component_losses_test.append(component_loss/batch_idx)
 
 
-            #Evaulate NN on testing data.
-            for batch_idx, (data, targets) in enumerate(test_loader):
-                # forward
-                scores = model(data)
-                loss = criterion_plotting(scores, targets)
-                losses.append(loss.item())
-
-            cost_per_epoc_test.append(sum(losses) / len(losses))
-
-
-
-            #Component wise error testing data
-            for batch_idx, (data, targets) in enumerate(test_loader):
-                pred = model(data)
-                loss = component_loss_f(pred, targets)
-                if batch_idx == 0:
-                    component_loss = loss
-                else:
-                    component_loss = component_loss + loss
-            component_losses_test.append(component_loss/batch_idx)
-
-            #Component wise error training data
-            for batch_idx, (data, targets) in enumerate(train_loader):
-                pred = model(data)
-                loss = component_loss_f(pred, targets)
-                if batch_idx == 0:
-                    component_loss = loss
-                else:
-                    component_loss = component_loss + loss
-            component_losses_train.append(component_loss/batch_idx)
-
-# except KeyboardInterrupt:
-#     #plotting will error most likely if this doesn't finish properly
-#     DO_PLOTTING=False
-#     pass
 
 #convert these which are list of tensors to just a tenosr now.
 component_loss_train = torch.zeros(len(component_losses_train), len(component_losses_train[0]))
@@ -284,8 +270,6 @@ for i in range(len(component_losses_train)):
 component_loss_test = torch.zeros(len(component_losses_test), len(component_losses_test[0]))
 for i in range(len(component_losses_test)):
     component_loss_test[i, :] = component_losses_test[i]
-
-print(component_losses_test)
 
 
 if DO_PLOTTING:
@@ -305,17 +289,13 @@ if SAVE_MODEL:
     file_name = output_dir + 'my_model.pt'
     if os.path.exists(file_name):
         print("Overwritting file:", file_name)
-        val = input("Overwrite file? y/n: ")
-        if val == "y":
-            torch.save(model.state_dict(), file_name)
-            np.savetxt(output_dir + "/cost_per_epoch.txt", cost_per_epoc)
-            np.savetxt(output_dir + "/component_losses_test.txt", component_loss_test)
-            np.savetxt(output_dir + "/component_losses_train.txt", component_loss_train)
+        os.rename(file_name, file_name+'.backup')
 
-        else:
-            pass
-    else:
-        torch.save(model.state_dict(), file_name)
-        np.savetxt(output_dir + "/cost_per_epoch.txt", cost_per_epoc)
-        np.savetxt(output_dir + "/component_losses_test.txt", component_loss_test)
-        np.savetxt(output_dir + "/component_losses_train.txt", component_loss_train)
+    torch.save(model.state_dict(), file_name)
+    np.savetxt(output_dir + "/cost_per_epoch.txt", cost_per_epoc)
+    np.savetxt(output_dir + "/component_losses_test.txt", component_loss_test.detach())
+    np.savetxt(output_dir + "/component_losses_train.txt", component_loss_train.detach())
+
+
+sys.stdout.log.close()
+print("Success! :) ")

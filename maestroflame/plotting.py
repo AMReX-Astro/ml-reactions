@@ -31,8 +31,8 @@ class plotting_standard:
         self.N_fields = len(fields)
         self.test_loader = test_loader
         self.cost_per_epoc = cost_per_epoc
-        self.component_losses_test = component_losses_test
-        self.component_losses_train = component_losses_train
+        self.component_losses_test = component_losses_test.detach()
+        self.component_losses_train = component_losses_train.detach()
         self.cost_per_epoc_test = cost_per_epoc_test
         self.output_dir = output_dir
 
