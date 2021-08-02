@@ -26,7 +26,7 @@ warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation) #igno
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 DO_PLOTTING = True
 SAVE_MODEL = True
 log_loss_option = True
@@ -46,7 +46,7 @@ data_path = 'data/data1/flame/'
 input_prefix = 'react_inputs_*'
 output_prefix = 'react_outputs_*'
 plotfile_prefix = 'flame_*'
-output_dir = 'test_logger/'
+output_dir = 'big_run/'
 log_file = output_dir + "log.txt"
 
 isdir = os.path.isdir(output_dir)
@@ -124,7 +124,7 @@ from networks import Net, OC_Net
 if DEBUG_MODE:
     num_epochs = 5
 else:
-    num_epochs = 80
+    num_epochs = 100
 
 
 if DO_HYPER_OPTIMIZATION:

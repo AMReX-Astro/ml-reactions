@@ -151,7 +151,7 @@ else:
 # ---------------------------------------------------------------------------
 from losses import component_loss_f, loss_pinn, rms_weighted_error
 from losses import log_loss, loss_mass_fraction, component_loss_f_L1, relative_loss
-
+from losses import deritivave_loss_piecewise, signed_loss_function
 
 
 #As we test different loss functions, its important to keep a consistent one when
@@ -164,14 +164,37 @@ def criterion(data, pred, dXdt, actual):
     #I still don't understand this one but i think don does
     #loss1 = rms_weighted_error(pred, actual[:, :nnuc+1], actual[:, :nnuc+1])
 
+    # #difference in state variables vs prediction.
+    # loss1 = log_loss(pred, actual[:, :nnuc+1])
+    # #physics informed loss
+    # loss2 = loss_pinn(data, pred, actual, enuc_fac, enuc_dot_fac, log_option=True)
+    # #sum of mass fractions must be 1
+    # loss3 = loss_mass_fraction(pred)
+    # #relative loss function.
+    # loss4 = relative_loss(pred, actual[:, :nnuc+1])
+
+
     #difference in state variables vs prediction.
     loss1 = log_loss(pred, actual[:, :nnuc+1])
-    #physics informed loss
-    loss2 = loss_pinn(data, pred, actual, enuc_fac, enuc_dot_fac, log_option=True)
-    #sum of mass fractions must be 1
-    loss3 = loss_mass_fraction(pred)
-    #relative loss function.
+    #scaled rates (pinn part) This only scales the magnitude of rates
+    loss2 = deritivave_loss_piecewise(dXdt, actual[:, nnuc+1:])
+    #here we learn the sign of rates to make up for not doing that in loss2
+    loss3 = signed_loss_function(dXdt, actual[:, nnuc+1:])
+    #relative loss function. Helps disginguish between same errors of different
+    #scales since we're scaling the loss2 so heavily
     loss4 = relative_loss(pred, actual[:, :nnuc+1])
+    #sum of mass fractions must be 1
+    loss5 = loss_mass_fraction(pred)
+
+
+    print("loss1: ", loss1)
+    print("loss2: ", loss2)
+    print("loss3: ", loss3)
+    print("loss4: ", loss4)
+    print("loss5: ", loss5)
+
+    sys.exit()
+
 
 
     loss_arr = [loss1.item(), loss2.item(), loss3.item(), loss4.item()]
@@ -216,7 +239,7 @@ for epoch in range(num_epochs):
             dXdt[:, n] = data.grad.clone()[:, 0]
             data.grad.data.zero_()
 
-
+        dXdt.requires_grad = True
         loss, array_loss = criterion(data, prediction, dXdt, targets)
 
         losses.append(loss.item())
@@ -305,7 +328,6 @@ for epoch in range(num_epochs):
 
 
 #convert these which are list of tensors to just a tenosr now.
-print(component_losses_train)
 component_loss_train = torch.zeros(len(component_losses_train), len(component_losses_train[0]))
 for i in range(len(component_losses_train)):
     component_loss_train[i, :] = component_losses_train[i]
