@@ -402,7 +402,6 @@ class plotting_pinn:
 
     def do_different_loss_plot(self):
         fig, ax = plt.subplots()
-        print(self.different_loss_metrics)
 
 
         epochs = np.linspace(1, len(self.cost_per_epoc), num=len(self.cost_per_epoc))

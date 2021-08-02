@@ -11,6 +11,7 @@ import sys
 import pandas as pd
 import optuna
 from optuna.trial import TrialState
+from datetime import datetime
 # https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_simple.py
 import torch
 import torch.nn as nn
@@ -44,6 +45,44 @@ data_path = 'data/data3/flame/'
 input_prefix = 'react_inputs_*'
 output_prefix = 'react_outputs_*'
 plotfile_prefix = 'flame_*'
+output_dir = 'big_run_pinn/'
+log_file = output_dir + "log.txt"
+
+if os.path.isdir(output_dir) and (len(os.listdir(output_dir)) != 0):
+    print(f"Directory {output_dir} exists and is not empty.")
+    print("Please change output_dir or remove the directory to prevent overwritting data.")
+    sys.exit()
+
+
+isdir = os.path.isdir(output_dir)
+if not isdir:
+    os.mkdir(output_dir)
+
+class Logger(object):
+    def __init__(self):
+        self.terminal = sys.stdout
+        self.log = open(log_file, "a")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def flush(self):
+        pass
+
+
+sys.stdout = Logger()
+
+now = datetime.now()
+dt_string = now.strftime("%m/%d/%Y %H:%M:%S")
+print(f"Model starting on : {dt_string}")
+print(f"input_prefix {input_prefix}")
+print(f"output_prefix {output_prefix}")
+print(f"output_dir {output_dir}")
+print(f"DEBUG_MODE {DEBUG_MODE}")
+print(f"DO_PLOTTING {DO_PLOTTING}")
+print(f"DO_HYPER_OPTIMIZATION {DO_HYPER_OPTIMIZATION}")
+
 
 
 plotfiles = glob(data_path + plotfile_prefix)
@@ -95,7 +134,7 @@ from networks import Net, OC_Net
 if DEBUG_MODE:
     num_epochs = 3
 else:
-    num_epochs = 80
+    num_epochs = 100
 
 
 if DO_HYPER_OPTIMIZATION:
@@ -151,7 +190,7 @@ else:
 # ---------------------------------------------------------------------------
 from losses import component_loss_f, loss_pinn, rms_weighted_error
 from losses import log_loss, loss_mass_fraction, component_loss_f_L1, relative_loss
-from losses import deritivave_loss_piecewise, signed_loss_function
+from losses import derivative_loss_piecewise, signed_loss_function
 
 
 #As we test different loss functions, its important to keep a consistent one when
@@ -177,7 +216,7 @@ def criterion(data, pred, dXdt, actual):
     #difference in state variables vs prediction.
     loss1 = log_loss(pred, actual[:, :nnuc+1])
     #scaled rates (pinn part) This only scales the magnitude of rates
-    loss2 = deritivave_loss_piecewise(dXdt, actual[:, nnuc+1:])
+    loss2 = derivative_loss_piecewise(dXdt, actual[:, nnuc+1:])
     #here we learn the sign of rates to make up for not doing that in loss2
     loss3 = signed_loss_function(dXdt, actual[:, nnuc+1:])
     #relative loss function. Helps disginguish between same errors of different
@@ -186,21 +225,10 @@ def criterion(data, pred, dXdt, actual):
     #sum of mass fractions must be 1
     loss5 = loss_mass_fraction(pred)
 
-
-    print("loss1: ", loss1)
-    print("loss2: ", loss2)
-    print("loss3: ", loss3)
-    print("loss4: ", loss4)
-    print("loss5: ", loss5)
-
-    sys.exit()
+    loss_arr = [loss1.item(), loss2.item(), loss3.item(), loss4.item(), loss5.item()]
 
 
-
-    loss_arr = [loss1.item(), loss2.item(), loss3.item(), loss4.item()]
-
-
-    return  loss1 + loss2 + loss3  + loss4, loss_arr
+    return  loss1 + loss2 + loss3  + loss4 + loss5, loss_arr
 
 
 #plot storage
@@ -364,25 +392,18 @@ if DO_PLOTTING:
 
 
 if SAVE_MODEL:
-    file_name = 'my_model_pinn.pt'
+    file_name = output_dir + 'my_model_pinn.pt'
     if os.path.exists(file_name):
         print("Overwritting file:", file_name)
-        val = input("Overwrite file? y/n: ")
-        if val == "y":
-            torch.save(model.state_dict(), file_name)
-            np.savetxt("output_data_pinn/cost_per_epoch.txt", cost_per_epoc)
-            np.savetxt("output_data_pinn/component_losses_test.txt", component_losses_test)
-            np.savetxt("output_data_pinn/component_losses_train.txt", component_losses_train)
-            np.savetxt("output_data_pinn/d_component_losses_test.txt", d_component_losses_test)
-            np.savetxt("output_data_pinn/d_component_losses_train.txt", d_component_losses_train)
+        os.rename(file_name, file_name+'.backup')
+
+    torch.save(model.state_dict(), file_name)
+    np.savetxt("output_data_pinn/cost_per_epoch.txt", cost_per_epoc)
+    np.savetxt("output_data_pinn/component_losses_test.txt", component_losses_test)
+    np.savetxt("output_data_pinn/component_losses_train.txt", component_losses_train)
+    np.savetxt("output_data_pinn/d_component_losses_test.txt", d_component_losses_test)
+    np.savetxt("output_data_pinn/d_component_losses_train.txt", d_component_losses_train)
 
 
-        else:
-            pass
-    else:
-        torch.save(model.state_dict(), file_name)
-        np.savetxt("output_data_pinn/cost_per_epoch.txt", cost_per_epoc)
-        np.savetxt("output_data_pinn/component_losses_test.txt", component_losses_test)
-        np.savetxt("output_data_pinn/component_losses_train.txt", component_losses_train)
-        np.savetxt("output_data_pinn/d_component_losses_test.txt", d_component_losses_test)
-        np.savetxt("output_data_pinn/d_component_losses_train.txt", d_component_losses_train)
+print("Success! :) \n")
+sys.stdout.log.close()

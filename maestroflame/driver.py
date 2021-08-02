@@ -26,7 +26,7 @@ warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation) #igno
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-DEBUG_MODE = False
+DEBUG_MODE = True
 DO_PLOTTING = True
 SAVE_MODEL = True
 log_loss_option = True
@@ -48,6 +48,12 @@ output_prefix = 'react_outputs_*'
 plotfile_prefix = 'flame_*'
 output_dir = 'big_run/'
 log_file = output_dir + "log.txt"
+
+if os.path.isdir(output_dir) and (len(os.listdir(output_dir)) != 0):
+    print(f"Directory {output_dir} exists and is not empty.")
+    print("Please change output_dir or remove the directory to prevent overwritting data.")
+    sys.exit()
+
 
 isdir = os.path.isdir(output_dir)
 if not isdir:
@@ -297,5 +303,5 @@ if SAVE_MODEL:
     np.savetxt(output_dir + "/component_losses_train.txt", component_loss_train.detach())
 
 
+print("Success! :) \n")
 sys.stdout.log.close()
-print("Success! :) ")

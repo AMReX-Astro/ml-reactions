@@ -212,11 +212,7 @@ def tanh_loss(dxdt, prediction):
 
 from tools.custom_loss_viz import scaling_func
 
-def deritivave_loss_piecewise(dxdt, actual):
-
-    print('before scaaling--------------')
-    print(actual)
-    print(dxdt)
+def derivative_loss_piecewise(dxdt, actual):
 
     b1 = torch.tensor([.1])
     b2 = torch.tensor([100.])
@@ -226,10 +222,6 @@ def deritivave_loss_piecewise(dxdt, actual):
     scaled_actual = scaling_func(torch.abs(actual), lambda x : x, b1, b2, scaling)
 
     F = nn.L1Loss()
-
-    print('before scaaling--------------')
-    print(scaled_dxdt)
-    print(scaled_actual)
 
     return F(scaled_dxdt, scaled_actual)
 
