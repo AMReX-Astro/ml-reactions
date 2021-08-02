@@ -5,11 +5,11 @@ class Net(nn.Module):
     def __init__(self, input_size, h1, h2, h3, output_size):
         super().__init__()
         self.fc1 = nn.Linear(input_size, h1)
-        self.ac1 = nn.ReLU()
+        self.ac1 = nn.Tanh()
         self.fc2 = nn.Linear(h1, h2)
-        self.ac2 = nn.ReLU()
+        self.ac2 = nn.Tanh()
         self.fc3 = nn.Linear(h2, h3)
-        self.ac3 = nn.ReLU()
+        self.ac3 = nn.Tanh()
         self.fc4 = nn.Linear(h3, output_size)
 
     def forward(self, x):
@@ -21,6 +21,42 @@ class Net(nn.Module):
         x = self.ac3(x)
         x = self.fc4(x)
         return x
+
+
+class Deep_Net(nn.Module):
+    def __init__(self, input_size, h1, h2, h3, h4, h5, h6, h7, output_size):
+        super().__init__()
+        self.fc1 = nn.Linear(input_size, h1)
+        self.ac1 = nn.Tanh()
+        self.fc2 = nn.Linear(h1, h2)
+        self.ac2 = nn.Tanh()
+        self.fc3 = nn.Linear(h2, h3)
+        self.ac3 = nn.Tanh()
+        self.fc4 = nn.Linear(h3, h4)
+        self.ac4 = nn.Tanh()
+        self.fc5 = nn.Linear(h5, h6)
+        self.ac5 = nn.Tanh()
+        self.fc6 = nn.Linear(h6, h7)
+        self.ac6 = nn.Tanh()
+        self.fc7 = nn.Linear(h7, output_size)
+
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.ac1(x)
+        x = self.fc2(x)
+        x = self.ac2(x)
+        x = self.fc3(x)
+        x = self.ac3(x)
+        x = self.fc4(x)
+        x = self.ac4(x)
+        x = self.fc5(x)
+        x = self.ac5(x)
+        x = self.fc6(x)
+        x = self.ac6(x)
+        x = self.fc7(x)
+        return x
+
 
 class OC_Net(nn.Module):
 
@@ -45,7 +81,7 @@ class OC_Net(nn.Module):
         for i in range(self.n_layers):
             self.layers.append(nn.Linear(n_units[i], n_units[i+1]))
             self.dropouts.append(nn.Dropout(p_dropouts[i]))
-            self.activations.append(nn.ReLU())
+            self.activations.append(nn.Tanh())
 
         #output layer
         self.layers.append(nn.Linear(n_units[self.n_layers], n_units[self.n_layers+1]))
