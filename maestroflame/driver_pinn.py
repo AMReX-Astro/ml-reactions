@@ -28,7 +28,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 DEBUG_MODE = True
 DO_PLOTTING = True
-SAVE_MODEL = False
+SAVE_MODEL = True
 DO_HYPER_OPTIMIZATION = False #TODO
 
 
@@ -132,7 +132,7 @@ from networks import Net, OC_Net
 
 
 if DEBUG_MODE:
-    num_epochs = 3
+    num_epochs = 1500
 else:
     num_epochs = 100
 
@@ -286,8 +286,11 @@ for epoch in range(num_epochs):
         plotting_losses.append(loss_plot.item())
 
         loss_c = component_loss_f(prediction, targets[:, :nnuc+1])
+        loss_c = np.array(loss_c.tolist())
+
         #L1 loss bc big errors at first squaring big numbers results in nans
         dloss_c = component_loss_f_L1(dXdt, targets[:, nnuc+1:])
+        dloss_c = np.array(dloss_c.tolist())
 
         if batch_idx == 0:
             component_loss = loss_c
@@ -296,9 +299,6 @@ for epoch in range(num_epochs):
         else:
             component_loss = component_loss + loss_c
             d_component_loss = d_component_loss + dloss_c
-
-
-
 
 
     print(f"Cost at epoch {epoch} is {sum(losses) / len(losses)}")
@@ -337,8 +337,11 @@ for epoch in range(num_epochs):
 
             # -- Component and Deritivave component loss
             loss_c = component_loss_f(prediction, targets[:, :nnuc+1])
+            loss_c = np.array(loss_c.tolist())
+
             #L1 loss bc big errors at first squaring big numbers results in nans
             dloss_c = component_loss_f_L1(dXdt, targets[:, nnuc+1:])
+            dloss_c = np.array(dloss_c.tolist())
 
             if batch_idx == 0:
                 component_loss = loss_c
@@ -355,23 +358,10 @@ for epoch in range(num_epochs):
         d_component_losses_test.append(d_component_loss/batch_idx)
 
 
-#convert these which are list of tensors to just a tenosr now.
-component_loss_train = torch.zeros(len(component_losses_train), len(component_losses_train[0]))
-for i in range(len(component_losses_train)):
-    component_loss_train[i, :] = component_losses_train[i]
-
-component_loss_test = torch.zeros(len(component_losses_test), len(component_losses_test[0]))
-for i in range(len(component_losses_test)):
-    component_loss_test[i, :] = component_losses_test[i]
-
-
-d_component_loss_train = torch.zeros(len(d_component_losses_train), len(d_component_losses_train[0]))
-for i in range(len(d_component_losses_train)):
-    d_component_loss_train[i, :] = d_component_losses_train[i]
-
-d_component_loss_test = torch.zeros(len(d_component_losses_test), len(d_component_losses_test[0]))
-for i in range(len(d_component_losses_test)):
-    d_component_loss_test[i, :] = d_component_losses_test[i]
+component_losses_train = np.array(component_losses_train)
+component_losses_test = np.array(component_losses_test)
+d_component_losses_train = np.array(d_component_losses_train)
+d_component_losses_test = np.array(d_component_losses_test)
 
 different_loss_metrics = np.array(different_loss_metrics)
 
@@ -380,10 +370,9 @@ if DO_PLOTTING:
     print("Plotting...")
     from plotting import plotting_pinn
     fields = [field[1] for field in yt.load(react_data.output_files[0]).field_list]
-    output_dir = 'test_plot/'
 
-    plot_class = plotting_pinn(model, fields, test_loader, cost_per_epoc, component_loss_test,
-                component_loss_train, d_component_loss_test, d_component_loss_train,
+    plot_class = plotting_pinn(model, fields, test_loader, cost_per_epoc, component_losses_test,
+                component_losses_train, d_component_losses_test, d_component_losses_train,
                 cost_per_epoc_test, different_loss_metrics,  output_dir)
 
     plot_class.do_all_plots()
@@ -398,11 +387,11 @@ if SAVE_MODEL:
         os.rename(file_name, file_name+'.backup')
 
     torch.save(model.state_dict(), file_name)
-    np.savetxt("output_data_pinn/cost_per_epoch.txt", cost_per_epoc)
-    np.savetxt("output_data_pinn/component_losses_test.txt", component_losses_test)
-    np.savetxt("output_data_pinn/component_losses_train.txt", component_losses_train)
-    np.savetxt("output_data_pinn/d_component_losses_test.txt", d_component_losses_test)
-    np.savetxt("output_data_pinn/d_component_losses_train.txt", d_component_losses_train)
+    np.savetxt(output_dir + "/cost_per_epoch.txt", cost_per_epoc)
+    np.savetxt(output_dir + "/component_losses_test.txt", component_losses_test)
+    np.savetxt(output_dir + "/component_losses_train.txt", component_losses_train)
+    np.savetxt(output_dir + "/d_component_losses_test.txt", d_component_losses_test)
+    np.savetxt(output_dir + "/d_component_losses_train.txt", d_component_losses_train)
 
 
 print("Success! :) \n")

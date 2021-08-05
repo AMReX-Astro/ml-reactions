@@ -30,7 +30,7 @@ DEBUG_MODE = True
 DO_PLOTTING = True
 SAVE_MODEL = True
 log_loss_option = True
-DO_HYPER_OPTIMIZATION = True
+DO_HYPER_OPTIMIZATION = False
 
 
 # ------------------------ DATA --------------------------------------------
@@ -137,7 +137,7 @@ if DO_HYPER_OPTIMIZATION:
     BATCHSIZE = 16
     CLASSES = react_data.output_data.shape[1]
     in_features = react_data.input_data.shape[1]
-    EPOCHS = 10
+    EPOCHS = 25
     LOG_INTERVAL = 10
     N_TRAIN_EXAMPLES = BATCHSIZE * 30
     N_VALID_EXAMPLES = BATCHSIZE * 10
@@ -149,10 +149,10 @@ if DO_HYPER_OPTIMIZATION:
     OPTIMIZERS = ["Adam", "RMSprop", "SGD"]
     #optimizer study
     if DEBUG_MODE:
-        n_trials = 5
+        n_trials = 100
     else:
-        n_trials=100
-    timeout=600
+        n_trials=1000
+    timeout=1000
 
     from hyperparamter_optimization import do_h_opt, print_h_opt_results
     hyper_results = do_h_opt(train_loader, test_loader, BATCHSIZE, CLASSES, EPOCHS,
@@ -229,6 +229,7 @@ for epoch in range(num_epochs):
                 plotting_losses.append(loss_plot.item())
 
                 loss_c = component_loss_f(pred, targets)
+                loss_c = np.array(loss_c.tolist())
                 if batch_idx == 0:
                     component_loss = loss_c
                 else:
@@ -257,6 +258,7 @@ for epoch in range(num_epochs):
             losses.append(loss.item())
 
             loss_c = component_loss_f(pred, targets)
+            loss_c = np.array(loss_c.tolist())
             if batch_idx == 0:
                 component_loss = loss_c
             else:
@@ -266,16 +268,8 @@ for epoch in range(num_epochs):
         component_losses_test.append(component_loss/batch_idx)
 
 
-
-#convert these which are list of tensors to just a tenosr now.
-component_loss_train = torch.zeros(len(component_losses_train), len(component_losses_train[0]))
-for i in range(len(component_losses_train)):
-    component_loss_train[i, :] = component_losses_train[i]
-
-
-component_loss_test = torch.zeros(len(component_losses_test), len(component_losses_test[0]))
-for i in range(len(component_losses_test)):
-    component_loss_test[i, :] = component_losses_test[i]
+component_losses_test = np.array(component_losses_test)
+component_losses_train = np.array(component_losses_train)
 
 
 if DO_PLOTTING:
@@ -283,8 +277,8 @@ if DO_PLOTTING:
     from plotting import plotting_standard
     fields = [field[1] for field in yt.load(react_data.output_files[0]).field_list]
 
-    plot_class = plotting_standard(model, fields, test_loader, cost_per_epoc, component_loss_test,
-                component_loss_train, cost_per_epoc_test, output_dir)
+    plot_class = plotting_standard(model, fields, test_loader, cost_per_epoc, component_losses_test,
+                component_losses_train, cost_per_epoc_test, output_dir)
 
     plot_class.do_all_plots()
 
@@ -299,8 +293,8 @@ if SAVE_MODEL:
 
     torch.save(model.state_dict(), file_name)
     np.savetxt(output_dir + "/cost_per_epoch.txt", cost_per_epoc)
-    np.savetxt(output_dir + "/component_losses_test.txt", component_loss_test.detach())
-    np.savetxt(output_dir + "/component_losses_train.txt", component_loss_train.detach())
+    np.savetxt(output_dir + "/component_losses_test.txt", component_losses_test)
+    np.savetxt(output_dir + "/component_losses_train.txt", component_losses_train)
 
 
 print("Success! :) \n")

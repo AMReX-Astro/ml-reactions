@@ -31,8 +31,8 @@ class plotting_standard:
         self.N_fields = len(fields)
         self.test_loader = test_loader
         self.cost_per_epoc = cost_per_epoc
-        self.component_losses_test = component_losses_test.detach()
-        self.component_losses_train = component_losses_train.detach()
+        self.component_losses_test = component_losses_test
+        self.component_losses_train = component_losses_train
         self.cost_per_epoc_test = cost_per_epoc_test
         self.output_dir = output_dir
 
@@ -171,10 +171,10 @@ class plotting_pinn:
         self.N_fields = len(fields)
         self.test_loader = test_loader
         self.cost_per_epoc = cost_per_epoc
-        self.component_losses_test = component_losses_test.detach()
-        self.component_losses_train = component_losses_train.detach()
-        self.d_component_losses_test = d_component_losses_test.detach()
-        self.d_component_losses_train = d_component_losses_train.detach()
+        self.component_losses_test = component_losses_test
+        self.component_losses_train = component_losses_train
+        self.d_component_losses_test = d_component_losses_test
+        self.d_component_losses_train = d_component_losses_train
         self.cost_per_epoc_test = cost_per_epoc_test
         self.different_loss_metrics = different_loss_metrics
         self.output_dir = output_dir
