@@ -1,0 +1,7 @@
+n_cell = 64
+max_grid_size = 64
+size_train = 1
+
+density = 1.0e8
+temperature = 4.0e8
+end_time = 1.0e-6

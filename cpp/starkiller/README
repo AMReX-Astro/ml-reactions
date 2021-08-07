@@ -1,0 +1,25 @@
+DOWNLOAD PYTORCH
+
+GO TO DIRECTORY CPP
+cd cpp
+wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.8.1%2Bcpu.zip
+unzip libtorch-cxx11-abi-shared-with-deps-1.8.1+cpu.zip
+
+GIT CLONE AMREX
+
+GIT CLONE MICROPHYSICS
+
+GO TO DIRECTORY CPP/STARKILLER
+cd cpp/starkiller
+make
+
+YOU CAN EXCUTE YOUR PROGRAM :D
+mpirun -n 1 ./ml-starkiller2d.gnu.MPI.ex inputs
+
+ENJOY :)
+
+Compiling info and pytorch/c++ in general based on https://github.com/namehta4/KokkosToPytorch.git
+
+<!---
+Torchscript code based on https://pytorch.org/tutorials/advanced/cpp_export.html
+-->
