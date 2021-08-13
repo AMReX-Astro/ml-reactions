@@ -30,7 +30,7 @@ class ReactionSystem
     virtual ~ReactionSystem();
 
     // initialize class variables
-    void init(const int n_cell, const amrex::BoxArray& ba,
+    void init(const amrex::BoxArray& ba,
               const amrex::DistributionMapping& dm);
 
     // initialize extern parameters
@@ -42,17 +42,16 @@ class ReactionSystem
                     bool const_state = true);
 
     // compute the solution
-    void sol(amrex::Vector<amrex::MultiFab>& y);
+    void sol(amrex::MultiFab& y);
 
     // compute the rhs
-    void rhs(const amrex::Vector<amrex::MultiFab>& y,
-             amrex::Vector<amrex::MultiFab>& dydt);
+    void rhs(const amrex::MultiFab& y,
+             amrex::MultiFab& dydt);
 
     
     /* PRIVATE VARIABLES */
     
-    amrex::Vector<amrex::MultiFab> state;
-    int size;
+    amrex::MultiFab state;
     
     // these are defined in 'starkiller.cpp'
     static std::string probin_file;

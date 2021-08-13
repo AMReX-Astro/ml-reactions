@@ -16,29 +16,21 @@ ReactionSystem::ReactionSystem() = default;
 
 ReactionSystem::ReactionSystem(const ReactionSystem& src)
 {
-    size = src.size;
-    state.resize(size);
-    for (int i = 0; i < size; i++) {
-        state[i].define(src.state[i].boxArray(), src.state[i].DistributionMap(), NSCAL, 0);
-        MultiFab::Copy(state[i], src.state[i], 0, 0, NSCAL, 0);
-    }
+    state.define(src.state.boxArray(), src.state.DistributionMap(), NSCAL, 0);
+    MultiFab::Copy(state, src.state, 0, 0, NSCAL, 0);
 }
 
 // destructor
 ReactionSystem::~ReactionSystem() = default;
 
 // initialize variables
-void ReactionSystem::init(const int train_size, const amrex::BoxArray& ba,
+void ReactionSystem::init(const amrex::BoxArray& ba,
                           const amrex::DistributionMapping& dm)
 {
     // initialize multifabs
-    size = train_size;
-    state.resize(size);
-    for (int i = 0; i < size; i++){
-        state[i].define(ba, dm, NSCAL, 0);
-        state[i].setVal(0.0);
-    }
-
+    state.define(ba, dm, NSCAL, 0);
+    state.setVal(0.0);
+    
     static bool firstCall = true;
 
     if (firstCall) {
@@ -110,143 +102,129 @@ void ReactionSystem::init_state(const Real dens, const Real temp,
 
     ResetRandomSeed(time(0));
 
-    for (int l = 0; l < size; l++) {
-        for (MFIter mfi(state[l], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-            const auto tileBox = mfi.tilebox();
+    for (MFIter mfi(state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+	const auto tileBox = mfi.tilebox();
 
-            const Array4<Real> state_arr = state[l].array(mfi);
+	const Array4<Real> state_arr = state.array(mfi);
 
-            ParallelFor(tileBox, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                if (const_flag) {
-                    // state is constant, time varies
-                    state_arr(i,j,k,DT) = amrex::Random()*end_time;
-
-                    // set density and temperature
-                    state_arr(i,j,k,RHO) = dens;
-                    state_arr(i,j,k,TEMP) = temp;
-
-                    // mass fractions
-                    for (int n = 0; n < NumSpec; ++n) {
-                        state_arr(i,j,k,FS+n) = (1.0-xhe) / (NumSpec-1);
-                    }
-                    state_arr(i,j,k,he_species) = xhe;
-                } else {
-                    // time is constant / state varies
-                    state_arr(i,j,k,DT) = end_time;
-                }
-            });
-        }
+	ParallelFor(tileBox, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+	    if (const_flag) {
+		// state is constant, time varies
+		state_arr(i,j,k,DT) = amrex::Random()*end_time;
+		
+		// set density and temperature
+		state_arr(i,j,k,RHO) = dens;
+		state_arr(i,j,k,TEMP) = temp;
+		
+		// mass fractions
+		for (int n = 0; n < NumSpec; ++n) {
+		    state_arr(i,j,k,FS+n) = (1.0-xhe) / (NumSpec-1);
+		}
+		state_arr(i,j,k,he_species) = xhe;
+	    } else {
+		// time is constant / state varies
+		state_arr(i,j,k,DT) = end_time;
+	    }
+        });
     }
-    VisMF::Write(state[0], "plt_x0");
+    VisMF::Write(state, "plt_x0");
     //WriteSingleLevelPlotfile("plt_train", state[0], {"rho"}, geom, 0.0, 0);
 
 }
 
 // Get the solutions at times dt (stored in state)
-void ReactionSystem::sol(Vector<MultiFab>& y)
+void ReactionSystem::sol(MultiFab& y)
 {
     if (ParallelDescriptor::IOProcessor()) {
         std::cout << "computing exact solution ..." << std::endl;
     }
 
-    // initialize y
-    y.resize(size);
-
-    for (int i = 0; i < size; i++){
-        y[i].define(state[i].boxArray(), state[i].DistributionMap(), NSCAL, 0);
-        MultiFab::Copy(y[i], state[i], DT, DT, 1, 0);
-    }
-
+    y.define(state.boxArray(), state.DistributionMap(), NSCAL, 0);
+    MultiFab::Copy(y, state, DT, DT, 1, 0);
+    
     // evaluate the system solution
-    for (int l = 0; l < size; l++) {
-        for (MFIter mfi(state[l], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-            const auto tileBox = mfi.tilebox();
+    for (MFIter mfi(state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+	const auto tileBox = mfi.tilebox();
 
-            const Array4<Real> state_arr = state[l].array(mfi);
-            const Array4<Real> y_arr = y[l].array(mfi);
+	const Array4<Real> state_arr = state.array(mfi);
+	const Array4<Real> y_arr = y.array(mfi);
 
-            ParallelFor(tileBox, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                // construct a burn type
-                burn_t state_out;
+	ParallelFor(tileBox, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+            // construct a burn type
+            burn_t state_out;
 
-                // set density & temperature
-                state_out.rho = state_arr(i,j,k,RHO);
-                state_out.T = state_arr(i,j,k,TEMP);
+	    // set density & temperature
+	    state_out.rho = state_arr(i,j,k,RHO);
+	    state_out.T = state_arr(i,j,k,TEMP);
+	    
+	    // mass fractions
+	    for (int n = 0; n < NumSpec; ++n) {
+		state_out.xn[n] = state_arr(i,j,k,FS+n);
+	    }
+	    
+	    // integrate to get the output state
+	    Real dt = state_arr(i,j,k,DT);
+	    integrator(state_out, dt);
 
-                // mass fractions
-                for (int n = 0; n < NumSpec; ++n) {
-                    state_out.xn[n] = state_arr(i,j,k,FS+n);
-                }
-
-                // integrate to get the output state
-                Real dt = state_arr(i,j,k,DT);
-                integrator(state_out, dt);
-
-                // pass the solution values
-                y_arr(i,j,k,TEMP) = state_out.T;
-                y_arr(i,j,k,RHOE) = state_out.e;
-                for (int n = 0; n < NumSpec; ++n) {
-                    y_arr(i,j,k,FS+n) = state_out.xn[n];
-                }
-                y_arr(i,j,k,RHO) = state_out.rho;
-            });
-        }
+	    // pass the solution values
+	    y_arr(i,j,k,TEMP) = state_out.T;
+	    y_arr(i,j,k,RHOE) = state_out.e;
+	    for (int n = 0; n < NumSpec; ++n) {
+		y_arr(i,j,k,FS+n) = state_out.xn[n];
+	    }
+	    y_arr(i,j,k,RHO) = state_out.rho;
+	});
     }
-    VisMF::Write(y[0], "plt_y0");
+    VisMF::Write(y, "plt_y0");
 }
 
 // Get the solution rhs given state y
-void ReactionSystem::rhs(const Vector<MultiFab>& y,
-                         Vector<MultiFab>& dydt)
+void ReactionSystem::rhs(const MultiFab& y,
+                         MultiFab& dydt)
 {
     if (ParallelDescriptor::IOProcessor()) {
         std::cout << "computing rhs ..." << std::endl;
     }
 
     // initialize dydt
-    dydt.resize(size);
-
-    for (int i = 0; i < size; i++){
-        dydt[i].define(y[i].boxArray(), y[i].DistributionMap(), NSCAL, 0);
-        dydt[i].setVal(0.0);
-    }
+    dydt.define(y.boxArray(), y.DistributionMap(), NSCAL, 0);
+    dydt.setVal(0.0);
 
     // evaluate the system solution
-    for (int l = 0; l < size; l++) {
-        for (MFIter mfi(y[l], TilingIfNotGPU()); mfi.isValid(); ++mfi) {
-            const auto tileBox = mfi.tilebox();
+    for (MFIter mfi(y, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
+	const auto tileBox = mfi.tilebox();
 
-            const Array4<const Real> y_arr = y[l].array(mfi);
-            const Array4<const Real> state_arr = state[l].array(mfi);
-            const Array4<Real> dydt_arr = dydt[l].array(mfi);
+	const Array4<const Real> y_arr = y.array(mfi);
+	const Array4<const Real> state_arr = state.array(mfi);
+	const Array4<Real> dydt_arr = dydt.array(mfi);
 
-            ParallelFor(tileBox, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-                // construct a burn type
-                burn_t state_in;
+	ParallelFor(tileBox, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+            // construct a burn type
+            burn_t state_in;
 
-                // set density & temperature
-                state_in.rho = y_arr(i,j,k,RHO);
-                state_in.T = amrex::max(y_arr(i,j,k,TEMP), 0.0);
-
-                // mass fractions
-                for (int n = 0; n < NumSpec; ++n) {
-                    state_in.xn[n] = max(y_arr(i,j,k,FS+n), 0.0);
-                }
-
-                // evaluate the rhs
-                Array1D<Real, 1, neqs> ydot;
-                actual_rhs(state_in, ydot);
-                // note ydot is 1-based
-
-                // pass the solution values
-                for (int n = 0; n < NumSpec; ++n) {
-                    dydt_arr(i,j,k,FS+n) = aion[n]*ydot(1+n);
-                }
-                dydt_arr(i,j,k,RHOE) = ydot(net_ienuc);
-                dydt_arr(i,j,k,TEMP) = state_in.T;
-                dydt_arr(i,j,k,RHO) = state_in.rho;
-            });
-        }
+	    // set density & temperature
+	    state_in.rho = y_arr(i,j,k,RHO);
+	    state_in.T = amrex::max(y_arr(i,j,k,TEMP), 0.0);
+	    
+	    // mass fractions
+	    for (int n = 0; n < NumSpec; ++n) {
+		state_in.xn[n] = max(y_arr(i,j,k,FS+n), 0.0);
+	    }
+	    
+	    // evaluate the rhs
+	    Array1D<Real, 1, neqs> ydot;
+	    actual_rhs(state_in, ydot);
+	    // note ydot is 1-based
+	    
+	    // pass the solution values
+	    for (int n = 0; n < NumSpec; ++n) {
+		dydt_arr(i,j,k,FS+n) = aion[n]*ydot(1+n);
+	    }
+	    dydt_arr(i,j,k,RHOE) = ydot(net_ienuc);
+	    dydt_arr(i,j,k,TEMP) = state_in.T;
+	    dydt_arr(i,j,k,RHO) = state_in.rho;
+        });
     }
-    VisMF::Write(dydt[0], "plt_dydt0");
+    VisMF::Write(dydt, "plt_dydt0");
+
 }
