@@ -10,13 +10,14 @@
 #include <network.H>
 
 // state indices
-constexpr int NSCAL = 4 + NumSpec;
-constexpr int RHO = 0;
-constexpr int DT = 1;
-constexpr int TEMP = 2;
-constexpr int RHOE = 3;
-constexpr int FS = 4;  // FirstSpec
+constexpr int NIN = 3 + NumSpec;
+constexpr int DT = 0;
+constexpr int FS = 1;  // FirstSpec
+constexpr int RHO = NumSpec + 1;
+constexpr int TEMP = NumSpec + 2;
 
+constexpr int NOUT = 1 + NumSpec;
+constexpr int ENUC = NumSpec;
 
 class ReactionSystem
 {

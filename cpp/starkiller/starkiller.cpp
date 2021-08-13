@@ -16,8 +16,8 @@ ReactionSystem::ReactionSystem() = default;
 
 ReactionSystem::ReactionSystem(const ReactionSystem& src)
 {
-    state.define(src.state.boxArray(), src.state.DistributionMap(), NSCAL, 0);
-    MultiFab::Copy(state, src.state, 0, 0, NSCAL, 0);
+    state.define(src.state.boxArray(), src.state.DistributionMap(), NIN, 0);
+    MultiFab::Copy(state, src.state, 0, 0, NIN, 0);
 }
 
 // destructor
@@ -28,7 +28,7 @@ void ReactionSystem::init(const amrex::BoxArray& ba,
                           const amrex::DistributionMapping& dm)
 {
     // initialize multifabs
-    state.define(ba, dm, NSCAL, 0);
+    state.define(ba, dm, NIN, 0);
     state.setVal(0.0);
     
     static bool firstCall = true;
@@ -139,8 +139,7 @@ void ReactionSystem::sol(MultiFab& y)
         std::cout << "computing exact solution ..." << std::endl;
     }
 
-    y.define(state.boxArray(), state.DistributionMap(), NSCAL, 0);
-    MultiFab::Copy(y, state, DT, DT, 1, 0);
+    y.define(state.boxArray(), state.DistributionMap(), NOUT, 0);
     
     // evaluate the system solution
     for (MFIter mfi(state, TilingIfNotGPU()); mfi.isValid(); ++mfi) {
@@ -167,12 +166,10 @@ void ReactionSystem::sol(MultiFab& y)
 	    integrator(state_out, dt);
 
 	    // pass the solution values
-	    y_arr(i,j,k,TEMP) = state_out.T;
-	    y_arr(i,j,k,RHOE) = state_out.e;
+	    y_arr(i,j,k,ENUC) = state_out.e;
 	    for (int n = 0; n < NumSpec; ++n) {
-		y_arr(i,j,k,FS+n) = state_out.xn[n];
+		y_arr(i,j,k,n) = state_out.xn[n];
 	    }
-	    y_arr(i,j,k,RHO) = state_out.rho;
 	});
     }
     VisMF::Write(y, "plt_y0");
@@ -187,7 +184,7 @@ void ReactionSystem::rhs(const MultiFab& y,
     }
 
     // initialize dydt
-    dydt.define(y.boxArray(), y.DistributionMap(), NSCAL, 0);
+    dydt.define(y.boxArray(), y.DistributionMap(), NOUT, 0);
     dydt.setVal(0.0);
 
     // evaluate the system solution
@@ -218,11 +215,9 @@ void ReactionSystem::rhs(const MultiFab& y,
 	    
 	    // pass the solution values
 	    for (int n = 0; n < NumSpec; ++n) {
-		dydt_arr(i,j,k,FS+n) = aion[n]*ydot(1+n);
+		dydt_arr(i,j,k,n) = aion[n]*ydot(1+n);
 	    }
-	    dydt_arr(i,j,k,RHOE) = ydot(net_ienuc);
-	    dydt_arr(i,j,k,TEMP) = state_in.T;
-	    dydt_arr(i,j,k,RHO) = state_in.rho;
+	    dydt_arr(i,j,k,ENUC) = ydot(net_ienuc);
         });
     }
     VisMF::Write(dydt, "plt_dydt0");

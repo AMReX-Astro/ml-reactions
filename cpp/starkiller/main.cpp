@@ -61,8 +61,8 @@ int main (int argc, char* argv[])
         system.init_state(dens, temp, xhe, end_time/*,true*/);
 
         // Make a copy of input multifab (training)
-	MultiFab input(ba, dm, NSCAL, 0);
-	MultiFab::Copy(input, system.state, 0, 0, NSCAL, 0);
+	MultiFab input(ba, dm, NIN, 0);
+	MultiFab::Copy(input, system.state, 0, 0, NIN, 0);
 
 	VisMF::Write(input, "test_data_mf");
         Print() << "Initializing input multifab complete." << std::endl;
@@ -72,9 +72,9 @@ int main (int argc, char* argv[])
         
         // // Copy input multifab to torch tensor
 #if AMREX_SPACEDIM == 2
-	at::Tensor t1 = torch::zeros({(nbox[0]+1)*(nbox[1]+1), NSCAL});
+	at::Tensor t1 = torch::zeros({(nbox[0]+1)*(nbox[1]+1), NIN});
 #elif AMREX_SPACEDIM == 3
-        at::Tensor t1 = torch::zeros({(nbox[0]+1)*(nbox[1]+1)*(nbox[2]+1), NSCAL});
+        at::Tensor t1 = torch::zeros({(nbox[0]+1)*(nbox[1]+1)*(nbox[2]+1), NIN});
 #endif
         
 #ifdef USE_AMREX_CUDA
@@ -89,7 +89,7 @@ int main (int argc, char* argv[])
             const Box& tileBox = mfi.tilebox();
             auto const& input_arr = input.array(mfi);
 
-            ParallelFor(tileBox, NSCAL,
+            ParallelFor(tileBox, NIN,
 			[=] AMREX_GPU_DEVICE(int i, int j, int k, int n) {
                 const int index = AMREX_SPACEDIM == 2 ?
                     i*(nbox[1]+1)+j : (i*(nbox[1]+1)+j)*(nbox[2]+1)+k;
@@ -114,13 +114,13 @@ int main (int argc, char* argv[])
         std::vector<torch::jit::IValue> inputs_torch{t1};
         at::Tensor outputs_torch = module.forward(inputs_torch).toTensor();
         std::cout << "example output: "
-                  << outputs_torch.slice(/*dim=*/0, /*start=*/0, /*end=*/5) << '\n';
+                  << outputs_torch.slice(/*dim=*/NOUT-1, /*start=*/0, /*end=*/5) << '\n';
 #ifdef USE_AMREX_CUDA
         outputs_torch = outputs_torch.to(torch::kCUDA);
 #endif
 
         // Copy torch tensor to output multifab
-        MultiFab output(ba, dm, 2, 0);
+        MultiFab output(ba, dm, NOUT, 0);
 
 #ifdef _OPENMP
 #pragma omp parallel if (Gpu::notInLaunchRegion())
@@ -130,11 +130,11 @@ int main (int argc, char* argv[])
             const Box& tileBox = mfi.tilebox();
             auto const& output_arr = output.array(mfi);
 
-            ParallelFor(tileBox, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+            ParallelFor(tileBox, NOUT,
+			[=] AMREX_GPU_DEVICE(int i, int j, int k, int n) {
                 const int index = AMREX_SPACEDIM == 2 ?
                     i*(nbox[1]+1)+j : (i*(nbox[1]+1)+j)*(nbox[2]+1)+k;
-                output_arr(i, j, k, 0) = outputs_torch[index][0].item<double>();
-                output_arr(i, j, k, 1) = outputs_torch[index][1].item<double>();
+                output_arr(i, j, k, n) = outputs_torch[index][n].item<double>();
           });
         }
         VisMF::Write(output, "output_mf");
