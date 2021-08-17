@@ -114,8 +114,8 @@ int main (int argc, char* argv[])
         // Evaluate torch data
         std::vector<torch::jit::IValue> inputs_torch{t1};
         at::Tensor outputs_torch = module.forward(inputs_torch).toTensor();
-        std::cout << "example output: "
-                  << outputs_torch.slice(/*dim=*/NOUT-1, /*start=*/0, /*end=*/5) << '\n';
+        std::cout << "example output: \n"
+                  << outputs_torch.slice(/*dim=*/0, /*start=*/0, /*end=*/5) << '\n';
 #ifdef USE_AMREX_CUDA
         outputs_torch = outputs_torch.to(torch::kCUDA);
 #endif
