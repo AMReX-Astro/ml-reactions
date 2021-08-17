@@ -98,13 +98,14 @@ int main (int argc, char* argv[])
         }
 
         // Load pytorch module via torch script
+	Print() << "Reading " << model_filename << " model file ... ";
         torch::jit::script::Module module;
         try {
             // Deserialize the ScriptModule from a file using torch::jit::load().
             module = torch::jit::load(model_filename);
         }
         catch (const c10::Error& e) {
-            std::cerr << "error loading the model\n";
+            std::cerr << "error loading the model.\n";
             return -1;
         }
 

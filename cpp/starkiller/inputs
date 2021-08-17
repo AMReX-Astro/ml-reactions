@@ -1,7 +1,7 @@
 n_cell = 64
 max_grid_size = 64
 
-model_file = "my_model.pt"
+model_file = "example_model.pt"
 
 density = 1.0e8
 temperature = 4.0e8
