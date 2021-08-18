@@ -86,7 +86,9 @@ void ReactionSystem::init_state(const Real dens, const Real temp,
     }
 
     const bool const_flag = const_state;
-
+    dens_norm = dens;
+    temp_norm = temp;
+    
     // find index of He4
     int he_species = 0;
     for (int i = 0; i < NumSpec; ++i) {
@@ -113,8 +115,8 @@ void ReactionSystem::init_state(const Real dens, const Real temp,
 		state_arr(i,j,k,DT) = amrex::Random()*end_time;
 		
 		// set density and temperature
-		state_arr(i,j,k,RHO) = dens;
-		state_arr(i,j,k,TEMP) = temp;
+		state_arr(i,j,k,RHO) = dens/dens_norm;
+		state_arr(i,j,k,TEMP) = temp/temp_norm;
 		
 		// mass fractions
 		for (int n = 0; n < NumSpec; ++n) {
@@ -153,8 +155,8 @@ void ReactionSystem::sol(MultiFab& y)
             burn_t state_out;
 
 	    // set density & temperature
-	    state_out.rho = state_arr(i,j,k,RHO);
-	    state_out.T = state_arr(i,j,k,TEMP);
+	    state_out.rho = state_arr(i,j,k,RHO)*dens_norm;
+	    state_out.T = state_arr(i,j,k,TEMP)*temp_norm;
 	    
 	    // mass fractions
 	    for (int n = 0; n < NumSpec; ++n) {
@@ -200,8 +202,8 @@ void ReactionSystem::rhs(const MultiFab& y,
             burn_t state_in;
 
 	    // set density & temperature
-	    state_in.rho = y_arr(i,j,k,RHO);
-	    state_in.T = amrex::max(y_arr(i,j,k,TEMP), 0.0);
+	    state_in.rho = y_arr(i,j,k,RHO)*dens_norm;
+	    state_in.T = amrex::max(y_arr(i,j,k,TEMP), 0.0)*temp_norm;
 	    
 	    // mass fractions
 	    for (int n = 0; n < NumSpec; ++n) {

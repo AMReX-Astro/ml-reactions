@@ -40,6 +40,22 @@ int main (int argc, char* argv[])
         // Initial mass fraction
         Real xhe = 1.0;
 	
+        /////////// LOAD PYTORCH MODEL  ///////////////////////////////////////
+
+        // Load pytorch module via torch script
+	Print() << "Reading " << model_filename << " file ... ";
+        torch::jit::script::Module module;
+        try {
+            // Deserialize the ScriptModule from a file using torch::jit::load().
+            module = torch::jit::load(model_filename);
+        }
+        catch (const c10::Error& e) {
+            std::cerr << "error loading the model.\n";
+            return -1;
+        }
+
+        std::cout << "Model loaded.\n";
+	
         /////////// GENERATING MULTIFAB DATASET ///////////////////////////////////////
 
         // initialize arbitrary grid
@@ -63,8 +79,8 @@ int main (int argc, char* argv[])
         // Make a copy of input multifab (training)
 	MultiFab input(ba, dm, NIN, 0);
 	MultiFab::Copy(input, system.state, 0, 0, NIN, 0);
-
-	VisMF::Write(input, "test_data_mf");
+	VisMF::Write(input, "model_input");
+	
         Print() << "Initializing input multifab complete." << std::endl;
 
         // retrieve size of multifab
@@ -97,23 +113,11 @@ int main (int argc, char* argv[])
           });
         }
 
-        // Load pytorch module via torch script
-	Print() << "Reading " << model_filename << " model file ... ";
-        torch::jit::script::Module module;
-        try {
-            // Deserialize the ScriptModule from a file using torch::jit::load().
-            module = torch::jit::load(model_filename);
-        }
-        catch (const c10::Error& e) {
-            std::cerr << "error loading the model.\n";
-            return -1;
-        }
-
-        std::cout << "Model loaded.\n";
-
         // Evaluate torch data
         std::vector<torch::jit::IValue> inputs_torch{t1};
         at::Tensor outputs_torch = module.forward(inputs_torch).toTensor();
+	std::cout << "example input: \n"
+		  << t1.slice(/*dim=*/0, /*start=*/0, /*end=*/5) << '\n';
         std::cout << "example output: \n"
                   << outputs_torch.slice(/*dim=*/0, /*start=*/0, /*end=*/5) << '\n';
 #ifdef USE_AMREX_CUDA
@@ -138,7 +142,7 @@ int main (int argc, char* argv[])
                 output_arr(i, j, k, n) = outputs_torch[index][n].item<double>();
           });
         }
-        VisMF::Write(output, "output_mf");
+        VisMF::Write(output, "model_output");
 
         Print() << "Model evaluation complete." << std::endl;
 

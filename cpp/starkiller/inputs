@@ -3,6 +3,6 @@ max_grid_size = 64
 
 model_file = "ts_model.pt"
 
-density = 1.0e8
-temperature = 4.0e8
-end_time = 1.0e-6
+density = 5.0e7
+temperature = 3.0e9
+end_time = 1.0e-7

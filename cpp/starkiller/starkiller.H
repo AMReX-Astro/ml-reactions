@@ -53,6 +53,7 @@ class ReactionSystem
     /* PRIVATE VARIABLES */
     
     amrex::MultiFab state;
+    amrex::Real dens_norm, temp_norm;
     
     // these are defined in 'starkiller.cpp'
     static std::string probin_file;
