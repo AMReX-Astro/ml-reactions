@@ -82,7 +82,8 @@ int main (int argc, char* argv[])
         // Make a copy 
 	MultiFab input(ba, dm, NIN, 0);
 	MultiFab::Copy(input, system.state, 0, 0, NIN, 0);
-	VisMF::Write(input, "model_input");
+	// DEBUG 
+	// VisMF::Write(input, "model_input");
 	
         Print() << "Initializing input multifab complete." << std::endl;
 
@@ -145,7 +146,8 @@ int main (int argc, char* argv[])
                 output_arr(i, j, k, n) = outputs_torch[index][n].item<double>();
             });
         }
-        VisMF::Write(output, "model_output");
+	// DEBUG
+        // VisMF::Write(output, "model_output");
 
         Print() << "Model evaluation complete." << std::endl;
 

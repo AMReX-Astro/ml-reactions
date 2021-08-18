@@ -133,9 +133,8 @@ void ReactionSystem::init_state(const Real dens, const Real temp,
 	    }
         });
     }
-    VisMF::Write(state, "plt_x0");
-    //WriteSingleLevelPlotfile("plt_train", state[0], {"rho"}, geom, 0.0, 0);
-
+    // DEBUG
+    // VisMF::Write(state, "plt_x0");
 }
 
 // Get the solutions at times dt (stored in state)
@@ -178,7 +177,8 @@ void ReactionSystem::sol(MultiFab& y)
 	    }
 	});
     }
-    VisMF::Write(y, "plt_y0");
+    // DEBUG
+    // VisMF::Write(y, "plt_y0");
 }
 
 // Get the solution rhs given state y
@@ -226,6 +226,6 @@ void ReactionSystem::rhs(const MultiFab& y,
 	    dydt_arr(i,j,k,ENUC) = ydot(net_ienuc) / enuc_norm;
         });
     }
-    VisMF::Write(dydt, "plt_dydt0");
-
+    // DEBUG
+    // VisMF::Write(dydt, "plt_dydt0");
 }
