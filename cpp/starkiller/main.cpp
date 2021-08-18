@@ -22,8 +22,9 @@ int main (int argc, char* argv[])
 
 	std::string model_filename = "my_model.pt";
 	
-        Real dens = 1.0e8;
-        Real temp = 4.0e8;
+        Real dens_norm = 5.0e7;
+        Real temp_norm = 3.0e9;
+	Real enuc_norm = 1.5e12;
 	Real end_time = 1.0e-6;
 
         // read parameters
@@ -32,8 +33,9 @@ int main (int argc, char* argv[])
             pp.query("n_cell", n_cell);
             pp.query("max_grid_size", max_grid_size);
 	    pp.query("model_file", model_filename);
-            pp.query("density", dens);
-            pp.query("temperature", temp);
+            pp.query("density", dens_norm);
+            pp.query("temperature", temp_norm);
+	    pp.query("energy_nuc", enuc_norm);
 	    pp.query("end_time", end_time);
         }
 
@@ -74,7 +76,7 @@ int main (int argc, char* argv[])
         // initialize training multifabs
         ReactionSystem system;
         system.init(ba, dm);
-        system.init_state(dens, temp, xhe, end_time/*,true*/);
+        system.init_state(dens_norm, temp_norm, enuc_norm, xhe, end_time/*,true*/);
 
         // Make a copy of input multifab (training)
 	MultiFab input(ba, dm, NIN, 0);
@@ -110,7 +112,7 @@ int main (int argc, char* argv[])
                 const int index = AMREX_SPACEDIM == 2 ?
                     i*(nbox[1]+1)+j : (i*(nbox[1]+1)+j)*(nbox[2]+1)+k;
                 t1[index][n] = input_arr(i, j, k, n);
-          });
+            });
         }
 
         // Evaluate torch data
@@ -140,7 +142,7 @@ int main (int argc, char* argv[])
                 const int index = AMREX_SPACEDIM == 2 ?
                     i*(nbox[1]+1)+j : (i*(nbox[1]+1)+j)*(nbox[2]+1)+k;
                 output_arr(i, j, k, n) = outputs_torch[index][n].item<double>();
-          });
+            });
         }
         VisMF::Write(output, "model_output");
 

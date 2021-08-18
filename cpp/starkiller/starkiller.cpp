@@ -78,6 +78,7 @@ void ReactionSystem::init_extern()
 
 // initialize state
 void ReactionSystem::init_state(const Real dens, const Real temp,
+				const Real enuc, 
                                 const Real xhe, const Real end_time,
                                 bool const_state)
 {
@@ -86,8 +87,11 @@ void ReactionSystem::init_state(const Real dens, const Real temp,
     }
 
     const bool const_flag = const_state;
+
+    // set normalization factors
     dens_norm = dens;
     temp_norm = temp;
+    enuc_norm = enuc;
     
     // find index of He4
     int he_species = 0;
@@ -155,8 +159,8 @@ void ReactionSystem::sol(MultiFab& y)
             burn_t state_out;
 
 	    // set density & temperature
-	    state_out.rho = state_arr(i,j,k,RHO)*dens_norm;
-	    state_out.T = state_arr(i,j,k,TEMP)*temp_norm;
+	    state_out.rho = state_arr(i,j,k,RHO) * dens_norm;
+	    state_out.T = state_arr(i,j,k,TEMP) * temp_norm;
 	    
 	    // mass fractions
 	    for (int n = 0; n < NumSpec; ++n) {
@@ -168,7 +172,7 @@ void ReactionSystem::sol(MultiFab& y)
 	    integrator(state_out, dt);
 
 	    // pass the solution values
-	    y_arr(i,j,k,ENUC) = state_out.e;
+	    y_arr(i,j,k,ENUC) = state_out.e / enuc_norm;
 	    for (int n = 0; n < NumSpec; ++n) {
 		y_arr(i,j,k,n) = state_out.xn[n];
 	    }
@@ -202,8 +206,8 @@ void ReactionSystem::rhs(const MultiFab& y,
             burn_t state_in;
 
 	    // set density & temperature
-	    state_in.rho = y_arr(i,j,k,RHO)*dens_norm;
-	    state_in.T = amrex::max(y_arr(i,j,k,TEMP), 0.0)*temp_norm;
+	    state_in.rho = y_arr(i,j,k,RHO) * dens_norm;
+	    state_in.T = amrex::max(y_arr(i,j,k,TEMP), 0.0) * temp_norm;
 	    
 	    // mass fractions
 	    for (int n = 0; n < NumSpec; ++n) {
@@ -219,7 +223,7 @@ void ReactionSystem::rhs(const MultiFab& y,
 	    for (int n = 0; n < NumSpec; ++n) {
 		dydt_arr(i,j,k,n) = aion[n]*ydot(1+n);
 	    }
-	    dydt_arr(i,j,k,ENUC) = ydot(net_ienuc);
+	    dydt_arr(i,j,k,ENUC) = ydot(net_ienuc) / enuc_norm;
         });
     }
     VisMF::Write(dydt, "plt_dydt0");

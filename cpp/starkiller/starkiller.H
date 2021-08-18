@@ -39,6 +39,7 @@ class ReactionSystem
 
     // initialize state
     void init_state(const amrex::Real dens, const amrex::Real temp,
+		    const amrex::Real enuc, 
                     const amrex::Real xhe, const amrex::Real end_time,
                     bool const_state = true);
 
@@ -53,7 +54,7 @@ class ReactionSystem
     /* PRIVATE VARIABLES */
     
     amrex::MultiFab state;
-    amrex::Real dens_norm, temp_norm;
+    amrex::Real dens_norm, temp_norm, enuc_norm;
     
     // these are defined in 'starkiller.cpp'
     static std::string probin_file;
