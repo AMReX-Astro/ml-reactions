@@ -4,6 +4,7 @@
 #include <starkiller.H>
 
 #include <AMReX_ParmParse.H>
+#include <AMReX_PlotFileUtil.H>
 #include <AMReX_VisMF.H>
 
 #include <iostream>
@@ -73,12 +74,12 @@ int main (int argc, char* argv[])
         ba.maxSize(max_grid_size);
         DistributionMapping dm{ba};
 	
-        // initialize training multifabs
+        // initialize input multifabs
         ReactionSystem system;
         system.init(ba, dm);
         system.init_state(dens_norm, temp_norm, enuc_norm, xhe, end_time/*,true*/);
 
-        // Make a copy of input multifab (training)
+        // Make a copy 
 	MultiFab input(ba, dm, NIN, 0);
 	MultiFab::Copy(input, system.state, 0, 0, NIN, 0);
 	VisMF::Write(input, "model_input");
@@ -149,18 +150,28 @@ int main (int argc, char* argv[])
         Print() << "Model evaluation complete." << std::endl;
 
 	
-        // compute training solutions
+        // truth solutions
         MultiFab y;
         MultiFab ydot;
         system.sol(y);
         system.rhs(y, ydot);
 
-	//std::cout<<"Tensor example from PYTORCH!"<<std::endl;
-        //torch::Tensor tensor = torch::rand({2, 3});
-        //std::cout << tensor << std::endl;
+	// compute error between output and truth solutions
+	MultiFab diff(ba, dm, NOUT, 0);
+	MultiFab::LinComb(diff, 1.0, output, 0, -1.0, y, 0, 0, NOUT, 0);
 
+	// plot error
+	int cnt = 0;
+	Vector<std::string> varnames(NOUT);
+	for (int i = 0; i < NumSpec; i++) {
+            std::string spec_string = "X(";
+            spec_string += short_spec_names_cxx[i];
+            spec_string += ')';
+            varnames[cnt++] = spec_string;
+        }
+        varnames[cnt++] = "enuc";
 
-
+	WriteSingleLevelPlotfile("model_error", diff, varnames, geom, 0.0, 0);
     }
 
     amrex::Finalize();
