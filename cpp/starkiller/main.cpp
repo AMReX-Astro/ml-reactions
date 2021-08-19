@@ -21,7 +21,7 @@ int main (int argc, char* argv[])
         int n_cell = 128;
         int max_grid_size = 32;
 
-	std::string model_filename = "my_model.pt";
+	std::string model_filename = "ts_model.pt";
 	
         Real dens_norm = 5.0e7;
         Real temp_norm = 3.0e9;

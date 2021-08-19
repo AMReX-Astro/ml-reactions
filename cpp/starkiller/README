@@ -13,6 +13,9 @@ GO TO DIRECTORY CPP/STARKILLER
 cd cpp/starkiller
 make
 
+CONVERT PYTORCH MODEL TO TORCHSCRIPT MODEL
+python convert.py
+
 YOU CAN EXCUTE YOUR PROGRAM :D
 mpirun -n 1 ./ml-starkiller2d.gnu.MPI.ex inputs
 
