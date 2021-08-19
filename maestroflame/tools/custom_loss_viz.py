@@ -3,6 +3,12 @@ import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 
+def my_heaviside(x, input):
+    y = torch.zeros_like(x)
+    y[x < 0] = 0
+    y[x > 0] = 1
+    y[x == 0] = input
+    return y
 
 def scaling_func(x, f, barrier1, barrier2, scaling, smallest_num=torch.tensor([1e-30])):
 
@@ -12,10 +18,10 @@ def scaling_func(x, f, barrier1, barrier2, scaling, smallest_num=torch.tensor([1
     bump2 = f(barrier2) - f(scaling*torch.log(barrier2)) #makes right barrier continuous
 
 
-    y1 = torch.heaviside(x - barrier1, torch.tensor([0.]))
-    y2 = -torch.heaviside(x - barrier2, torch.tensor([0.])) + 1
-    y3 = -torch.heaviside(x - barrier1, torch.tensor([0.])) + 1
-    y4 = torch.heaviside(x - barrier2, torch.tensor([0.]))
+    y1 = my_heaviside(x - barrier1, torch.tensor([0.]))
+    y2 = -my_heaviside(x - barrier2, torch.tensor([0.])) + 1
+    y3 = -my_heaviside(x - barrier1, torch.tensor([0.])) + 1
+    y4 = my_heaviside(x - barrier2, torch.tensor([0.]))
 
     A = y1*y2
     B = torch.abs(y3-y4)

@@ -46,7 +46,7 @@ data_path = 'data/data1/flame/'
 input_prefix = 'react_inputs_*'
 output_prefix = 'react_outputs_*'
 plotfile_prefix = 'flame_*'
-output_dir = 'big_run/'
+output_dir = 'testing_output_scaling/'
 log_file = output_dir + "log.txt"
 
 if os.path.isdir(output_dir) and (len(os.listdir(output_dir)) != 0):
@@ -103,6 +103,10 @@ dens_fac = torch.max(react_data.input_data[:, 14, :])
 temp_fac = torch.max(react_data.input_data[:, 15, :])
 enuc_fac = torch.max(react_data.output_data[:, 13, :])
 
+#save these factors to a file
+arr = np.array([dens_fac.item(), temp_fac.item(), enuc_fac.item()])
+np.savetxt(output_dir + 'scaling_factors.txt', arr, header='Density, Temperature, Enuc factors (ordered)')
+
 react_data.input_data[:, 14, :]  = react_data.input_data[:, 14, :]/dens_fac
 react_data.input_data[:, 15, :]  = react_data.input_data[:, 15, :]/temp_fac
 react_data.output_data[:, 13, :] = react_data.output_data[:, 13, :]/enuc_fac
@@ -124,11 +128,11 @@ test_loader = DataLoader(dataset=test_set, batch_size=16, shuffle=True)
 # ------------------------ NEURAL NETWORK -----------------------------------
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
-from networks import Net, OC_Net
+from networks import Net, OC_Net, Deep_Net
 
 
 if DEBUG_MODE:
-    num_epochs = 5
+    num_epochs = 1
 else:
     num_epochs = 100
 
@@ -179,7 +183,9 @@ if DO_HYPER_OPTIMIZATION:
 
 else:
 
-    model = Net(react_data.input_data.shape[1], 64, 128, 64, react_data.output_data.shape[1])
+    #model = Net(react_data.input_data.shape[1], 64, 128, 64, react_data.output_data.shape[1])
+    model = Deep_Net(react_data.input_data.shape[1], 32, 32, 32, 32, 32, 32, 32, react_data.output_data.shape[1])
+
     optimizer = optim.Adam(model.parameters(), lr=1e-5)
 
 
@@ -272,20 +278,9 @@ component_losses_test = np.array(component_losses_test)
 component_losses_train = np.array(component_losses_train)
 
 
-if DO_PLOTTING:
-    print("Plotting...")
-    from plotting import plotting_standard
-    fields = [field[1] for field in yt.load(react_data.output_files[0]).field_list]
-
-    plot_class = plotting_standard(model, fields, test_loader, cost_per_epoc, component_losses_test,
-                component_losses_train, cost_per_epoc_test, output_dir)
-
-    plot_class.do_all_plots()
-
-
-
 
 if SAVE_MODEL:
+    print("Saving...")
     file_name = output_dir + 'my_model.pt'
     if os.path.exists(file_name):
         print("Overwritting file:", file_name)
@@ -295,6 +290,18 @@ if SAVE_MODEL:
     np.savetxt(output_dir + "/cost_per_epoch.txt", cost_per_epoc)
     np.savetxt(output_dir + "/component_losses_test.txt", component_losses_test)
     np.savetxt(output_dir + "/component_losses_train.txt", component_losses_train)
+
+
+
+if DO_PLOTTING:
+    print("Plotting...")
+    from plotting import plotting_standard
+    fields = [field[1] for field in yt.load(react_data.output_files[0])._field_list]
+
+    plot_class = plotting_standard(model, fields, test_loader, cost_per_epoc, component_losses_test,
+                component_losses_train, cost_per_epoc_test, output_dir)
+
+    plot_class.do_all_plots()
 
 
 print("Success! :) \n")

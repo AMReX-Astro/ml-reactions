@@ -149,10 +149,10 @@ class plotting_standard:
         fig.savefig(self.output_dir + "/component_testing_loss.pdf", bbox_inches='tight')
 
     def do_all_plots(self):
-        self.do_prediction_vs_solution_plot()
         self.do_cost_per_epoch_plot()
         self.do_component_loss_train_plot()
         self.do_component_loss_test_plot()
+        self.do_prediction_vs_solution_plot()
 
 
 
@@ -288,7 +288,7 @@ class plotting_pinn:
         # Hide x labels and tick labels for all but bottom plot.
         for ax in axs:
             ax.label_outer()
-        plt.legend(bbox_to_anchor=(1, 2))
+        plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
         fig.savefig(self.output_dir + "/component_testing_loss.pdf", bbox_inches='tight')
 
 
@@ -315,7 +315,7 @@ class plotting_pinn:
         # Hide x labels and tick labels for all but bottom plot.
         for ax in axs:
             ax.label_outer()
-        plt.legend(bbox_to_anchor=(1, 2))
+        plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
         fig.savefig(self.output_dir + "/d_component_training_loss.pdf", bbox_inches='tight')
 
 
@@ -341,7 +341,7 @@ class plotting_pinn:
         # Hide x labels and tick labels for all but bottom plot.
         for ax in axs:
             ax.label_outer()
-        plt.legend(bbox_to_anchor=(1, 2))
+        plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
         fig.savefig(self.output_dir + "/d_component_testing_loss.pdf", bbox_inches='tight')
 
 
@@ -367,7 +367,7 @@ class plotting_pinn:
         # Hide x labels and tick labels for all but bottom plot.
         for ax in axs:
             ax.label_outer()
-        plt.legend(bbox_to_anchor=(1, 2))
+        plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
         fig.savefig(self.output_dir + "/d_component_testing_loss.pdf", bbox_inches='tight')
 
 
@@ -395,7 +395,7 @@ class plotting_pinn:
         # Hide x labels and tick labels for all but bottom plot.
         for ax in axs:
             ax.label_outer()
-        plt.legend(bbox_to_anchor=(1, 2))
+        plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
         fig.savefig(self.output_dir + "/d_component_training_loss.pdf", bbox_inches='tight')
 
 
@@ -414,7 +414,7 @@ class plotting_pinn:
                 sum += self.different_loss_metrics[:, i]
 
 
-            plt.plot(epochs, self.different_loss_metrics[:, i] + sum, label='loss{}'.format(i))
+            plt.plot(epochs, self.different_loss_metrics[:, i] + sum, label='loss{}'.format(i+1))
             if i == 0:
                 ax.fill_between(epochs, self.different_loss_metrics[:, i] + sum,  alpha=0.2)
             else:
@@ -431,12 +431,10 @@ class plotting_pinn:
         fig.savefig(self.output_dir + "/different_loss_log_functions.pdf", bbox_inches='tight')
 
     def do_all_plots(self):
-        self.do_prediction_vs_solution_plot()
         self.do_cost_per_epoch_plot()
         self.do_component_loss_train_plot()
         self.do_component_loss_test_plot()
         self.do_dcomponent_loss_train_plot()
         self.do_dcomponent_loss_test_plot()
         self.do_different_loss_plot()
-        # self.do_d_component_loss_train_plot()
-        # self.do_d_component_loss_test_plot()
+        self.do_prediction_vs_solution_plot()

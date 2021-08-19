@@ -45,7 +45,7 @@ data_path = 'data/data3/flame/'
 input_prefix = 'react_inputs_*'
 output_prefix = 'react_outputs_*'
 plotfile_prefix = 'flame_*'
-output_dir = 'big_run_pinn/'
+output_dir = 'fix_plot/'
 log_file = output_dir + "log.txt"
 
 if os.path.isdir(output_dir) and (len(os.listdir(output_dir)) != 0):
@@ -128,11 +128,11 @@ test_loader = DataLoader(dataset=test_set, batch_size=16, shuffle=True)
 # ------------------------ NEURAL NETWORK -----------------------------------
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
-from networks import Net, OC_Net
+from networks import Net, OC_Net, Deep_Net
 
 
 if DEBUG_MODE:
-    num_epochs = 1500
+    num_epochs = 3
 else:
     num_epochs = 100
 
@@ -153,7 +153,7 @@ if DO_HYPER_OPTIMIZATION:
     OPTIMIZERS = ["Adam", "RMSprop", "SGD"]
     #optimizer study
     if DEBUG_MODE:
-        n_trials = 5
+        n_trials = 100
     else:
         n_trials=100
     timeout=600
@@ -181,8 +181,9 @@ if DO_HYPER_OPTIMIZATION:
 
 else:
 
-    model = Net(react_data.input_data.shape[1], 64, 128, 64, react_data.output_data.shape[1]//2)
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    #model = Net(react_data.input_data.shape[1], 64, 128, 64, react_data.output_data.shape[1]//2)
+    model = Deep_Net(react_data.input_data.shape[1], 32, 32, 32, 32, 32, 32, 32, react_data.output_data.shape[1]//2)
+    optimizer = optim.Adam(model.parameters(), lr=1e-6)
 
 
 # ------------------------ LOSS ---------------------------------------------
@@ -216,7 +217,10 @@ def criterion(data, pred, dXdt, actual):
     #difference in state variables vs prediction.
     loss1 = log_loss(pred, actual[:, :nnuc+1])
     #scaled rates (pinn part) This only scales the magnitude of rates
-    loss2 = derivative_loss_piecewise(dXdt, actual[:, nnuc+1:])
+    #loss2 = derivative_loss_piecewise(dXdt, actual[:, nnuc+1:])
+    L = nn.L1Loss()
+    loss2 = L(dXdt, actual[:, nnuc+1:])
+
     #here we learn the sign of rates to make up for not doing that in loss2
     loss3 = signed_loss_function(dXdt, actual[:, nnuc+1:])
     #relative loss function. Helps disginguish between same errors of different
@@ -224,11 +228,13 @@ def criterion(data, pred, dXdt, actual):
     loss4 = relative_loss(pred, actual[:, :nnuc+1])
     #sum of mass fractions must be 1
     loss5 = loss_mass_fraction(pred)
+    #sum of rates must be 0
+    #loss6 = loss_rates_mass_frac(dXdt, actual[:, nnuc+1:])
 
-    loss_arr = [loss1.item(), loss2.item(), loss3.item(), loss4.item(), loss5.item()]
-
-
-    return  loss1 + loss2 + loss3  + loss4 + loss5, loss_arr
+    # loss_arr = [loss1.item(), loss2.item(), loss3.item(), loss4.item(), loss5.item()]
+    # return  loss1 + loss2 + loss3  + loss4 + loss5, loss_arr
+    loss_arr = [loss1.item(), loss2.item(), loss3.item(), loss5.item()]
+    return  loss1 +  loss2 + loss3  + loss5, loss_arr
 
 
 #plot storage
@@ -351,8 +357,6 @@ for epoch in range(num_epochs):
                 d_component_loss = d_component_loss + dloss_c
 
 
-
-
         cost_per_epoc_test.append(sum(losses) / len(losses))
         component_losses_test.append(component_loss/batch_idx)
         d_component_losses_test.append(d_component_loss/batch_idx)
@@ -362,25 +366,11 @@ component_losses_train = np.array(component_losses_train)
 component_losses_test = np.array(component_losses_test)
 d_component_losses_train = np.array(d_component_losses_train)
 d_component_losses_test = np.array(d_component_losses_test)
-
 different_loss_metrics = np.array(different_loss_metrics)
 
 
-if DO_PLOTTING:
-    print("Plotting...")
-    from plotting import plotting_pinn
-    fields = [field[1] for field in yt.load(react_data.output_files[0]).field_list]
-
-    plot_class = plotting_pinn(model, fields, test_loader, cost_per_epoc, component_losses_test,
-                component_losses_train, d_component_losses_test, d_component_losses_train,
-                cost_per_epoc_test, different_loss_metrics,  output_dir)
-
-    plot_class.do_all_plots()
-
-
-
-
 if SAVE_MODEL:
+    print("Saving...")
     file_name = output_dir + 'my_model_pinn.pt'
     if os.path.exists(file_name):
         print("Overwritting file:", file_name)
@@ -392,6 +382,18 @@ if SAVE_MODEL:
     np.savetxt(output_dir + "/component_losses_train.txt", component_losses_train)
     np.savetxt(output_dir + "/d_component_losses_test.txt", d_component_losses_test)
     np.savetxt(output_dir + "/d_component_losses_train.txt", d_component_losses_train)
+
+
+if DO_PLOTTING:
+    print("Plotting...")
+    from plotting import plotting_pinn
+    fields = [field[1] for field in yt.load(react_data.output_files[0])._field_list]
+
+    plot_class = plotting_pinn(model, fields, test_loader, cost_per_epoc, component_losses_test,
+                component_losses_train, d_component_losses_test, d_component_losses_train,
+                cost_per_epoc_test, different_loss_metrics,  output_dir)
+
+    plot_class.do_all_plots()
 
 
 print("Success! :) \n")
