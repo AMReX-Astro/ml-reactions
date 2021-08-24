@@ -1,0 +1,9 @@
+&extern
+
+    rtol_spec = 1.d-6
+    atol_spec = 1.d-6
+
+    retry_burn = F
+
+    jacobian = 2
+/

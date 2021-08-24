@@ -1,0 +1,9 @@
+n_cell = 64
+max_grid_size = 64
+
+model_file = "ts_model.pt"
+
+density = 4.914646941093778610e+07
+temperature = 2.994452890577044010e+09
+energy_nuc = 1.334678186688000000e+12
+end_time = 1.0e-7
