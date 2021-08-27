@@ -5,11 +5,11 @@ class Net(nn.Module):
     def __init__(self, input_size, h1, h2, h3, output_size):
         super().__init__()
         self.fc1 = nn.Linear(input_size, h1)
-        self.ac1 = nn.Tanh()
+        self.ac1 = nn.CELU()
         self.fc2 = nn.Linear(h1, h2)
-        self.ac2 = nn.Tanh()
+        self.ac2 = nn.CELU()
         self.fc3 = nn.Linear(h2, h3)
-        self.ac3 = nn.Tanh()
+        self.ac3 = nn.CELU()
         self.fc4 = nn.Linear(h3, output_size)
 
     def forward(self, x):

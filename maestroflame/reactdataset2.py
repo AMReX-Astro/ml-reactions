@@ -91,9 +91,9 @@ class ReactDataset2(Dataset):
                 else:
                     ad = ds.all_data()
 
-                for i,field in enumerate(ds.field_list):
+                for i,field in enumerate(ds._field_list):
                     if i == 0:
-                        data = np.zeros([len(ds.field_list), len(ad[field])])
+                        data = np.zeros([len(ds._field_list), len(ad[field])])
 
                     data[i,:] = np.array(ad[field])
             except:
@@ -129,9 +129,9 @@ class ReactDataset2(Dataset):
                     elif data.shape[2] < NUM_GRID_CELLS:
                         #double size of cut
                         ad = ds.r[:, flame_loc-2*half:flame_loc+2*half]
-                        for i,field in enumerate(ds.field_list):
+                        for i,field in enumerate(ds._field_list):
                             if i == 0:
-                                data = np.zeros([len(ds.field_list), len(ad[field])])
+                                data = np.zeros([len(ds._field_list), len(ad[field])])
 
                             data[i,:] = np.array(ad[field])
                         data = torch.from_numpy(data.reshape((1,data.shape[0],data.shape[1])))

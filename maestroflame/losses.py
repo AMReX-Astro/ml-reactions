@@ -1,6 +1,13 @@
 import torch
 import torch.nn as nn
 
+def my_heaviside(x, input):
+    y = torch.zeros_like(x)
+    y[x < 0] = 0
+    y[x > 0] = 1
+    y[x == 0] = input
+    return y
+
 def component_loss_f(prediction, targets):
     #Takes the MSE of each component and returns the array of losses
     loss = torch.zeros(prediction.shape[1])
@@ -46,8 +53,8 @@ def log_loss(prediction, target):
         #greater than barrier we apply mse loss
         #less then barier we apply log of mse loss
 
-        A = torch.heaviside(target - barrier, torch.tensor([0.]))
-        B = -torch.heaviside(target - barrier, torch.tensor([0.])) + 1
+        A = my_heaviside(target - barrier, torch.tensor([0.]))
+        B = -my_heaviside(target - barrier, torch.tensor([0.])) + 1
 
 
         X_loss =  torch.sum(A * L(X, X_target) + B* torch.abs(.01*L(torch.log(X), torch.log(X_target))))
@@ -132,10 +139,10 @@ def loss_pinn(input, prediction, target, enuc_fac, enuc_dot_fac,
 
 
 
-                 y1 = torch.heaviside(target[:, nnuc+1:] - barrier1, torch.tensor([0.]))
-                 y2 = -torch.heaviside(target[:, nnuc+1:] - barrier2, torch.tensor([0.])) + 1
-                 y3 = -torch.heaviside(target[:, nnuc+1:] - barrier1, torch.tensor([0.])) + 1
-                 y4 = torch.heaviside(target[:, nnuc+1:] - barrier2, torch.tensor([0.]))
+                 y1 = my_heaviside(target[:, nnuc+1:] - barrier1, torch.tensor([0.]))
+                 y2 = -my_heaviside(target[:, nnuc+1:] - barrier2, torch.tensor([0.])) + 1
+                 y3 = -my_heaviside(target[:, nnuc+1:] - barrier1, torch.tensor([0.])) + 1
+                 y4 = my_heaviside(target[:, nnuc+1:] - barrier2, torch.tensor([0.]))
 
                  A = y1*y2
                  B = torch.abs(y3-y4)
@@ -152,10 +159,10 @@ def loss_pinn(input, prediction, target, enuc_fac, enuc_dot_fac,
 
 
 
-                y1 = torch.heaviside(target[:, nnuc+1:] - barrier1, torch.tensor([0.]))
-                y2 = -torch.heaviside(target[:, nnuc+1:] - barrier2, torch.tensor([0.])) + 1
-                y3 = -torch.heaviside(target[:, nnuc+1:] - barrier1, torch.tensor([0.])) + 1
-                y4 = torch.heaviside(target[:, nnuc+1:] - barrier2, torch.tensor([0.]))
+                y1 = my_heaviside(target[:, nnuc+1:] - barrier1, torch.tensor([0.]))
+                y2 = -my_heaviside(target[:, nnuc+1:] - barrier2, torch.tensor([0.])) + 1
+                y3 = -my_heaviside(target[:, nnuc+1:] - barrier1, torch.tensor([0.])) + 1
+                y4 = my_heaviside(target[:, nnuc+1:] - barrier2, torch.tensor([0.]))
 
                 A = y1*y2
                 B = torch.abs(y3-y4)
@@ -191,8 +198,8 @@ def loss_pure(prediction, target, log_option = False):
             #greater than barrier we apply mse loss
             #less then barier we apply log of mse loss
 
-            A = torch.heaviside(target[:, :nnuc+1] - barrier, torch.tensor([0.]))
-            B = -torch.heaviside(target[:, :nnuc+1] - barrier, torch.tensor([0.])) + 1
+            A = my_heaviside(target[:, :nnuc+1] - barrier, torch.tensor([0.]))
+            B = -my_heaviside(target[:, :nnuc+1] - barrier, torch.tensor([0.])) + 1
 
             L =  torch.sum(A * L(target[:, :nnuc+1], prediction) + B* torch.abs(.01*L(torch.log(target[:, :nnuc+1]), torch.log(prediction))))
 

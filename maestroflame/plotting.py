@@ -31,8 +31,8 @@ class plotting_standard:
         self.N_fields = len(fields)
         self.test_loader = test_loader
         self.cost_per_epoc = cost_per_epoc
-        self.component_losses_test = component_losses_test.detach()
-        self.component_losses_train = component_losses_train.detach()
+        self.component_losses_test = component_losses_test
+        self.component_losses_train = component_losses_train
         self.cost_per_epoc_test = cost_per_epoc_test
         self.output_dir = output_dir
 
@@ -43,22 +43,49 @@ class plotting_standard:
 
     def do_prediction_vs_solution_plot(self):
         ############ Prediction Vs Solution Plot Should fall one y=x line.
+
+
         plt.figure()
         #N = react_data.output_data.shape[1]
-        colors = matplotlib.cm.rainbow(np.linspace(0, 1, self.N_fields))
+        colors = matplotlib.cm.rainbow(np.linspace(0, 1, self.nnuc+1))
         #fields = [field[1] for field in yt.load(react_data.output_files[0]).field_list]
         with torch.no_grad():
             losses = []
+
             for batch_idx, (data, targets) in enumerate(self.test_loader):
-                pred = self.model(data)
-                for i in range(pred.shape[0]):
-                    if i == 0 and batch_idx == 0:
-                        for j in range(pred.shape[1]):
-                            plt.scatter(pred[i,j], targets[i,j], color=colors[j], label=self.fields[j])
-                    else:
-                        plt.scatter(pred[i, :], targets[i, :], c=colors)
-                # if batch_idx == 100:
-                #     break
+            #pulling this data out and storing it then calling matplotlib as
+            #few times as possible is much faster.
+                if batch_idx==0:
+                    data_whole = data
+                    targets_whole = targets
+                else:
+                    data_whole = torch.cat((data_whole, data))
+                    targets_whole = torch.cat((targets_whole, targets))
+
+            #for batch_idx, (data, targets) in enumerate(self.test_loader):
+            pred = self.model(data)
+            #print(pred.shape)
+            for i in range(pred.shape[1]):
+                if i == 0:
+                    plt.scatter(pred[i,:], targets[i,:], c=colors, label=self.fields[i])
+                else:
+                    plt.scatter(pred[i, :], targets[i, :self.nnuc+1], c=colors)
+        # plt.figure()
+        # #N = react_data.output_data.shape[1]
+        # colors = matplotlib.cm.rainbow(np.linspace(0, 1, self.N_fields))
+        # #fields = [field[1] for field in yt.load(react_data.output_files[0]).field_list]
+        # with torch.no_grad():
+        #     losses = []
+        #     for batch_idx, (data, targets) in enumerate(self.test_loader):
+        #         pred = self.model(data)
+        #         for i in range(pred.shape[0]):
+        #             if i == 0 and batch_idx == 0:
+        #                 for j in range(pred.shape[1]):
+        #                     plt.scatter(pred[i,j], targets[i,j], color=colors[j], label=self.fields[j])
+        #             else:
+        #                 plt.scatter(pred[i, :], targets[i, :], c=colors)
+        #         # if batch_idx == 100:
+        #         #     break
         plt.plot(np.linspace(0, 1), np.linspace(0,1), '--', color='orange')
         #plt.legend(yt.load(react_data.output_files[0]).field_list, colors=colors)
         plt.legend(bbox_to_anchor=(1, 1))
@@ -149,10 +176,10 @@ class plotting_standard:
         fig.savefig(self.output_dir + "/component_testing_loss.pdf", bbox_inches='tight')
 
     def do_all_plots(self):
-        self.do_prediction_vs_solution_plot()
         self.do_cost_per_epoch_plot()
         self.do_component_loss_train_plot()
         self.do_component_loss_test_plot()
+        self.do_prediction_vs_solution_plot()
 
 
 
@@ -171,10 +198,10 @@ class plotting_pinn:
         self.N_fields = len(fields)
         self.test_loader = test_loader
         self.cost_per_epoc = cost_per_epoc
-        self.component_losses_test = component_losses_test.detach()
-        self.component_losses_train = component_losses_train.detach()
-        self.d_component_losses_test = d_component_losses_test.detach()
-        self.d_component_losses_train = d_component_losses_train.detach()
+        self.component_losses_test = component_losses_test
+        self.component_losses_train = component_losses_train
+        self.d_component_losses_test = d_component_losses_test
+        self.d_component_losses_train = d_component_losses_train
         self.cost_per_epoc_test = cost_per_epoc_test
         self.different_loss_metrics = different_loss_metrics
         self.output_dir = output_dir
@@ -192,16 +219,28 @@ class plotting_pinn:
         #fields = [field[1] for field in yt.load(react_data.output_files[0]).field_list]
         with torch.no_grad():
             losses = []
+
             for batch_idx, (data, targets) in enumerate(self.test_loader):
-                pred = self.model(data)
-                for i in range(pred.shape[0]):
-                    if i == 0 and batch_idx == 0:
-                        for j in range(self.nnuc+1):
-                            plt.scatter(pred[i,j], targets[i,j], color=colors[j], label=self.fields[j])
-                    else:
-                        plt.scatter(pred[i, :self.nnuc+1], targets[i, :self.nnuc+1], c=colors)
-                # if batch_idx == 100:
-                #     break
+            #pulling this data out and storing it then calling matplotlib as
+            #few times as possible is much faster.
+                if batch_idx==0:
+                    data_whole = data
+                    targets_whole = targets
+                else:
+                    data_whole = torch.cat((data_whole, data))
+                    targets_whole = torch.cat((targets_whole, targets))
+
+            #for batch_idx, (data, targets) in enumerate(self.test_loader):
+            pred = self.model(data)
+            #print(pred.shape)
+            for i in range(pred.shape[1]):
+                if i == 0:
+                    plt.scatter(pred[i,:], targets[i,:self.nnuc+1], c=colors, label=self.fields[i])
+                else:
+                    plt.scatter(pred[i, :self.nnuc+1], targets[i, :self.nnuc+1], c=colors)
+
+
+
         plt.plot(np.linspace(0, 1), np.linspace(0,1), '--', color='orange')
         #plt.legend(yt.load(react_data.output_files[0]).field_list, colors=colors)
         plt.legend(bbox_to_anchor=(1, 1))
@@ -288,7 +327,7 @@ class plotting_pinn:
         # Hide x labels and tick labels for all but bottom plot.
         for ax in axs:
             ax.label_outer()
-        plt.legend(bbox_to_anchor=(1, 2))
+        plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
         fig.savefig(self.output_dir + "/component_testing_loss.pdf", bbox_inches='tight')
 
 
@@ -315,7 +354,7 @@ class plotting_pinn:
         # Hide x labels and tick labels for all but bottom plot.
         for ax in axs:
             ax.label_outer()
-        plt.legend(bbox_to_anchor=(1, 2))
+        plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
         fig.savefig(self.output_dir + "/d_component_training_loss.pdf", bbox_inches='tight')
 
 
@@ -341,7 +380,7 @@ class plotting_pinn:
         # Hide x labels and tick labels for all but bottom plot.
         for ax in axs:
             ax.label_outer()
-        plt.legend(bbox_to_anchor=(1, 2))
+        plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
         fig.savefig(self.output_dir + "/d_component_testing_loss.pdf", bbox_inches='tight')
 
 
@@ -367,7 +406,7 @@ class plotting_pinn:
         # Hide x labels and tick labels for all but bottom plot.
         for ax in axs:
             ax.label_outer()
-        plt.legend(bbox_to_anchor=(1, 2))
+        plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
         fig.savefig(self.output_dir + "/d_component_testing_loss.pdf", bbox_inches='tight')
 
 
@@ -395,7 +434,7 @@ class plotting_pinn:
         # Hide x labels and tick labels for all but bottom plot.
         for ax in axs:
             ax.label_outer()
-        plt.legend(bbox_to_anchor=(1, 2))
+        plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
         fig.savefig(self.output_dir + "/d_component_training_loss.pdf", bbox_inches='tight')
 
 
@@ -414,7 +453,7 @@ class plotting_pinn:
                 sum += self.different_loss_metrics[:, i]
 
 
-            plt.plot(epochs, self.different_loss_metrics[:, i] + sum, label='loss{}'.format(i))
+            plt.plot(epochs, self.different_loss_metrics[:, i] + sum, label='loss{}'.format(i+1))
             if i == 0:
                 ax.fill_between(epochs, self.different_loss_metrics[:, i] + sum,  alpha=0.2)
             else:
@@ -431,12 +470,10 @@ class plotting_pinn:
         fig.savefig(self.output_dir + "/different_loss_log_functions.pdf", bbox_inches='tight')
 
     def do_all_plots(self):
-        self.do_prediction_vs_solution_plot()
         self.do_cost_per_epoch_plot()
         self.do_component_loss_train_plot()
         self.do_component_loss_test_plot()
         self.do_dcomponent_loss_train_plot()
         self.do_dcomponent_loss_test_plot()
         self.do_different_loss_plot()
-        # self.do_d_component_loss_train_plot()
-        # self.do_d_component_loss_test_plot()
+        self.do_prediction_vs_solution_plot()
