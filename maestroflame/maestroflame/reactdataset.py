@@ -18,7 +18,7 @@ import matplotlib.cbook
 warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation) #ignore plt depreciations
 import gc
 
-class ReactDataset2(Dataset):
+class ReactDataset(Dataset):
 
     def __init__(self, data_path, input_prefix, output_prefix, plotfile_prefix, DEBUG_MODE=False):
         #loading data

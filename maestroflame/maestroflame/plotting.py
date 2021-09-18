@@ -91,11 +91,11 @@ class plotting_standard:
         plt.legend(bbox_to_anchor=(1, 1))
         plt.xlabel('Prediction')
         plt.ylabel('Solution')
-        plt.savefig(self.output_dir + "/prediction_vs_solution.pdf", bbox_inches='tight')
+        plt.savefig(self.output_dir + "/prediction_vs_solution.png", bbox_inches='tight')
 
         plt.yscale("log")
         plt.xscale("log")
-        plt.savefig(self.output_dir + "/prediction_vs_solution_log.pdf", bbox_inches='tight')
+        plt.savefig(self.output_dir + "/prediction_vs_solution_log.png", bbox_inches='tight')
 
 
     def do_cost_per_epoch_plot(self):
@@ -119,7 +119,7 @@ class plotting_standard:
         for ax in axs:
             ax.label_outer()
         axs[0].legend(bbox_to_anchor=(1, 1))
-        fig.savefig(self.output_dir + "/cost_vs_epoch.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/cost_vs_epoch.png", bbox_inches='tight')
 
 
     def do_component_loss_train_plot(self):
@@ -146,7 +146,7 @@ class plotting_standard:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2))
-        fig.savefig(self.output_dir + "/component_training_loss.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/component_training_loss.png", bbox_inches='tight')
 
 
 
@@ -173,7 +173,7 @@ class plotting_standard:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2))
-        fig.savefig(self.output_dir + "/component_testing_loss.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/component_testing_loss.png", bbox_inches='tight')
 
     def do_all_plots(self):
         self.do_cost_per_epoch_plot()
@@ -246,11 +246,11 @@ class plotting_pinn:
         plt.legend(bbox_to_anchor=(1, 1))
         plt.xlabel('Prediction')
         plt.ylabel('Solution')
-        plt.savefig(self.output_dir + "/prediction_vs_solution.pdf", bbox_inches='tight')
+        plt.savefig(self.output_dir + "/prediction_vs_solution.png", bbox_inches='tight')
 
         plt.yscale("log")
         plt.xscale("log")
-        plt.savefig(self.output_dir + "/prediction_vs_solution_log.pdf", bbox_inches='tight')
+        plt.savefig(self.output_dir + "/prediction_vs_solution_log.png", bbox_inches='tight')
 
 
     def do_cost_per_epoch_plot(self):
@@ -274,7 +274,7 @@ class plotting_pinn:
         for ax in axs:
             ax.label_outer()
         axs[0].legend(bbox_to_anchor=(1, 1))
-        fig.savefig(self.output_dir + "/cost_vs_epoch.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/cost_vs_epoch.png", bbox_inches='tight')
 
 
     def do_component_loss_train_plot(self):
@@ -301,7 +301,7 @@ class plotting_pinn:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2))
-        fig.savefig(self.output_dir + "/component_training_loss.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/component_training_loss.png", bbox_inches='tight')
 
 
 
@@ -328,7 +328,7 @@ class plotting_pinn:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
-        fig.savefig(self.output_dir + "/component_testing_loss.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/component_testing_loss.png", bbox_inches='tight')
 
 
     def do_dcomponent_loss_train_plot(self):
@@ -355,7 +355,7 @@ class plotting_pinn:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
-        fig.savefig(self.output_dir + "/d_component_training_loss.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/d_component_training_loss.png", bbox_inches='tight')
 
 
     def do_dcomponent_loss_test_plot(self):
@@ -381,7 +381,7 @@ class plotting_pinn:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
-        fig.savefig(self.output_dir + "/d_component_testing_loss.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/d_component_testing_loss.png", bbox_inches='tight')
 
 
     def do_d_component_loss_test_plot(self):
@@ -407,7 +407,7 @@ class plotting_pinn:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
-        fig.savefig(self.output_dir + "/d_component_testing_loss.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/d_component_testing_loss.png", bbox_inches='tight')
 
 
 
@@ -435,8 +435,7 @@ class plotting_pinn:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
-        fig.savefig(self.output_dir + "/d_component_training_loss.pdf", bbox_inches='tight')
-
+        fig.savefig(self.output_dir + "/d_component_training_loss.png", bbox_inches='tight')
 
 
     def do_different_loss_plot(self):
@@ -463,11 +462,11 @@ class plotting_pinn:
         plt.legend(loc='upper left')
         plt.xlabel("epochs")
         plt.title("Various loss function values")
-        fig.savefig(self.output_dir + "/different_loss_functions.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/different_loss_functions.png", bbox_inches='tight')
 
         plt.yscale("log")
         plt.title("Log Various loss function values")
-        fig.savefig(self.output_dir + "/different_loss_log_functions.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/different_loss_log_functions.png", bbox_inches='tight')
 
     def do_all_plots(self):
         self.do_cost_per_epoch_plot()
