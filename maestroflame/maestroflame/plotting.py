@@ -124,7 +124,7 @@ class plotting_standard:
 
     def do_component_loss_train_plot(self):
 
-        #Comopnent losses  train
+        #Component losses  train
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -138,7 +138,7 @@ class plotting_standard:
             axs[1].semilogy(np.linspace(1, N, num=N),
                             self.component_losses_train[:, i], label=self.fields[i])
 
-        fig.suptitle('Comonent wise error in training data')
+        fig.suptitle('Component wise error in training data')
         axs[1].set_xlabel("Num Epochs")
         axs[1].set_ylabel('Log Cost')
         axs[0].set_ylabel('Cost (MSE)')
@@ -151,7 +151,7 @@ class plotting_standard:
 
 
     def do_component_loss_test_plot(self):
-        #Comopnent losses  test
+        #Component losses  test
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -165,7 +165,7 @@ class plotting_standard:
             axs[1].semilogy(np.linspace(1, N, num=N), self.component_losses_test[:, i],
                             label=self.fields[i])
 
-        fig.suptitle('Comonent wise error in testing data')
+        fig.suptitle('Component wise error in testing data')
         axs[1].set_xlabel("Num Epochs")
         axs[1].set_ylabel('Log Cost')
         axs[0].set_ylabel('Cost (MSE)')
@@ -279,7 +279,7 @@ class plotting_pinn:
 
     def do_component_loss_train_plot(self):
 
-        #Comopnent losses  train
+        #Component losses  train
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -293,7 +293,7 @@ class plotting_pinn:
             axs[1].semilogy(np.linspace(1, N, num=N),
                             self.component_losses_train[:, i], label=self.fields[i])
 
-        fig.suptitle('Comonent wise error in training data')
+        fig.suptitle('Component wise error in training data')
         axs[1].set_xlabel("Num Epochs")
         axs[1].set_ylabel('Log Cost')
         axs[0].set_ylabel('Cost (MSE)')
@@ -306,7 +306,7 @@ class plotting_pinn:
 
 
     def do_component_loss_test_plot(self):
-        #Comopnent losses  test
+        #Component losses  test
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -320,7 +320,7 @@ class plotting_pinn:
             axs[1].semilogy(np.linspace(1, N, num=N), self.component_losses_test[:, i],
                             label=self.fields[i])
 
-        fig.suptitle('Comonent wise error in testing data')
+        fig.suptitle('Component wise error in testing data')
         axs[1].set_xlabel("Num Epochs")
         axs[1].set_ylabel('Log Cost')
         axs[0].set_ylabel('Cost (MSE)')
@@ -333,7 +333,7 @@ class plotting_pinn:
 
     def do_dcomponent_loss_train_plot(self):
 
-        #Comopnent losses  train
+        #Component losses  train
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -359,7 +359,7 @@ class plotting_pinn:
 
 
     def do_dcomponent_loss_test_plot(self):
-        #Comopnent losses  test
+        #Component losses  test
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -373,7 +373,7 @@ class plotting_pinn:
             axs[1].semilogy(np.linspace(1, N, num=N), self.d_component_losses_test[:, i],
                             label=self.fields[i])
 
-        fig.suptitle('Derivative comonent wise error in testing data')
+        fig.suptitle('Derivative component wise error in testing data')
         axs[1].set_xlabel("Num Epochs")
         axs[1].set_ylabel('Log Cost')
         axs[0].set_ylabel('Cost (MSE)')
@@ -385,7 +385,7 @@ class plotting_pinn:
 
 
     def do_d_component_loss_test_plot(self):
-        #Comopnent derivative losses  test
+        #Component derivative losses  test
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -399,7 +399,7 @@ class plotting_pinn:
             axs[1].semilogy(np.linspace(1, N, num=N), self.component_losses_test[:, i],
                             label=self.fields[i])
 
-        fig.suptitle('Comonent wise error in testing data')
+        fig.suptitle('Component wise error in testing data')
         axs[1].set_xlabel("Num Epochs")
         axs[1].set_ylabel('Log Cost')
         axs[0].set_ylabel('Cost (MSE)')
@@ -413,7 +413,7 @@ class plotting_pinn:
 
     def do_d_component_loss_train_plot(self):
 
-        #Comopnent losses  train
+        #Component losses  train
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -427,7 +427,7 @@ class plotting_pinn:
             axs[1].semilogy(np.linspace(1, N, num=N),
                             self.component_losses_train[:, i], label=self.fields[i])
 
-        fig.suptitle('Comonent wise error in training data')
+        fig.suptitle('Component wise error in training data')
         axs[1].set_xlabel("Num Epochs")
         axs[1].set_ylabel('Log Cost')
         axs[0].set_ylabel('Cost (MSE)')
