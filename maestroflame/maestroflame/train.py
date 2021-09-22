@@ -175,6 +175,8 @@ class NuclearReactionML:
 
             model = OC_Net(react_data.input_data.shape[1], react_data.output_data.shape[1], hyper_results)
 
+            # Get model to cuda if possible
+            model.to(device=device)
 
             optimizer = hyper_results['optimizer']
             lr = hyper_results['lr']
@@ -243,6 +245,10 @@ class NuclearReactionML:
 
                     #Evaulate NN on testing data.
                     for batch_idx, (data, targets) in enumerate(self.test_loader):
+                        # Get data to cuda if possible
+                        data = data.to(device=device)
+                        targets = targets.to(device=device)
+
                         # forward
                         pred = model(data)
                         loss = criterion_plotting(pred, targets)
@@ -496,7 +502,6 @@ class NuclearReactionPinn:
 
 
 
-
         labels = []
         xs = []
         #train network
@@ -590,6 +595,10 @@ class NuclearReactionPinn:
             if self.DO_PLOTTING:
 
                 for batch_idx, (data, targets) in enumerate(self.train_loader):
+                    # Get data to cuda if possible
+                    data = data.to(device=device)
+                    targets = targets.to(device=device)
+
                     # forward
                     data.requires_grad=True
 
