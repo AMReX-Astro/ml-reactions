@@ -5,11 +5,34 @@ class Net(nn.Module):
     def __init__(self, input_size, h1, h2, h3, output_size):
         super().__init__()
         self.fc1 = nn.Linear(input_size, h1)
-        self.ac1 = nn.CELU()
+        self.ac1 = nn.CELU(alpha=100.0)
         self.fc2 = nn.Linear(h1, h2)
-        self.ac2 = nn.CELU()
+        self.ac2 = nn.CELU(alpha=100.0)
         self.fc3 = nn.Linear(h2, h3)
-        self.ac3 = nn.CELU()
+        self.ac3 = nn.CELU(alpha=1000.0)
+        self.fc4 = nn.Linear(h3, output_size)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.ac1(x)
+        x = self.fc2(x)
+        x = self.ac2(x)
+        x = self.fc3(x)
+        x = self.ac3(x)
+        x = self.fc4(x)
+        return x
+
+#this is just a testing network to compare how tanh does vs celu
+#We think there is a vanishing gradient problem.
+class Net_tanh(nn.Module):
+    def __init__(self, input_size, h1, h2, h3, output_size):
+        super().__init__()
+        self.fc1 = nn.Linear(input_size, h1)
+        self.ac1 = nn.Tanh()
+        self.fc2 = nn.Linear(h1, h2)
+        self.ac2 = nn.Tanh()
+        self.fc3 = nn.Linear(h2, h3)
+        self.ac3 = nn.Tanh()
         self.fc4 = nn.Linear(h3, output_size)
 
     def forward(self, x):

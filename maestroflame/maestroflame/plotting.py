@@ -63,13 +63,14 @@ class plotting_standard:
                     targets_whole = torch.cat((targets_whole, targets))
 
             #for batch_idx, (data, targets) in enumerate(self.test_loader):
-            pred = self.model(data)
+            pred = self.model(data_whole)
             #print(pred.shape)
-            for i in range(pred.shape[1]):
+            for i in range(pred.shape[0]):
                 if i == 0:
-                    plt.scatter(pred[i,:], targets[i,:], c=colors, label=self.fields[i])
+                    for j in range(pred.shape[1]):
+                        plt.scatter(pred[i,j], targets_whole[i,j], color=colors[j], label=self.fields[j])
                 else:
-                    plt.scatter(pred[i, :], targets[i, :self.nnuc+1], c=colors)
+                    plt.scatter(pred[i, :], targets_whole[i, :self.nnuc+1], c=colors)
         # plt.figure()
         # #N = react_data.output_data.shape[1]
         # colors = matplotlib.cm.rainbow(np.linspace(0, 1, self.N_fields))
@@ -91,11 +92,11 @@ class plotting_standard:
         plt.legend(bbox_to_anchor=(1, 1))
         plt.xlabel('Prediction')
         plt.ylabel('Solution')
-        plt.savefig(self.output_dir + "/prediction_vs_solution.pdf", bbox_inches='tight')
+        plt.savefig(self.output_dir + "/prediction_vs_solution.png", bbox_inches='tight')
 
         plt.yscale("log")
         plt.xscale("log")
-        plt.savefig(self.output_dir + "/prediction_vs_solution_log.pdf", bbox_inches='tight')
+        plt.savefig(self.output_dir + "/prediction_vs_solution_log.png", bbox_inches='tight')
 
 
     def do_cost_per_epoch_plot(self):
@@ -119,12 +120,12 @@ class plotting_standard:
         for ax in axs:
             ax.label_outer()
         axs[0].legend(bbox_to_anchor=(1, 1))
-        fig.savefig(self.output_dir + "/cost_vs_epoch.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/cost_vs_epoch.png", bbox_inches='tight')
 
 
     def do_component_loss_train_plot(self):
 
-        #Comopnent losses  train
+        #Component losses  train
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -138,7 +139,7 @@ class plotting_standard:
             axs[1].semilogy(np.linspace(1, N, num=N),
                             self.component_losses_train[:, i], label=self.fields[i])
 
-        fig.suptitle('Comonent wise error in training data')
+        fig.suptitle('Component wise error in training data')
         axs[1].set_xlabel("Num Epochs")
         axs[1].set_ylabel('Log Cost')
         axs[0].set_ylabel('Cost (MSE)')
@@ -146,12 +147,12 @@ class plotting_standard:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2))
-        fig.savefig(self.output_dir + "/component_training_loss.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/component_training_loss.png", bbox_inches='tight')
 
 
 
     def do_component_loss_test_plot(self):
-        #Comopnent losses  test
+        #Component losses  test
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -165,7 +166,7 @@ class plotting_standard:
             axs[1].semilogy(np.linspace(1, N, num=N), self.component_losses_test[:, i],
                             label=self.fields[i])
 
-        fig.suptitle('Comonent wise error in testing data')
+        fig.suptitle('Component wise error in testing data')
         axs[1].set_xlabel("Num Epochs")
         axs[1].set_ylabel('Log Cost')
         axs[0].set_ylabel('Cost (MSE)')
@@ -173,7 +174,7 @@ class plotting_standard:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2))
-        fig.savefig(self.output_dir + "/component_testing_loss.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/component_testing_loss.png", bbox_inches='tight')
 
     def do_all_plots(self):
         self.do_cost_per_epoch_plot()
@@ -231,13 +232,14 @@ class plotting_pinn:
                     targets_whole = torch.cat((targets_whole, targets))
 
             #for batch_idx, (data, targets) in enumerate(self.test_loader):
-            pred = self.model(data)
+            pred = self.model(data_whole)
             #print(pred.shape)
-            for i in range(pred.shape[1]):
+            for i in range(pred.shape[0]):
                 if i == 0:
-                    plt.scatter(pred[i,:], targets[i,:self.nnuc+1], c=colors, label=self.fields[i])
+                    for j in range(pred.shape[1]):
+                        plt.scatter(pred[i,j], targets_whole[i,j], color=colors[j], label=self.fields[j])
                 else:
-                    plt.scatter(pred[i, :self.nnuc+1], targets[i, :self.nnuc+1], c=colors)
+                    plt.scatter(pred[i, :self.nnuc+1], targets_whole[i, :self.nnuc+1], c=colors)
 
 
 
@@ -246,11 +248,11 @@ class plotting_pinn:
         plt.legend(bbox_to_anchor=(1, 1))
         plt.xlabel('Prediction')
         plt.ylabel('Solution')
-        plt.savefig(self.output_dir + "/prediction_vs_solution.pdf", bbox_inches='tight')
+        plt.savefig(self.output_dir + "/prediction_vs_solution.png", bbox_inches='tight')
 
         plt.yscale("log")
         plt.xscale("log")
-        plt.savefig(self.output_dir + "/prediction_vs_solution_log.pdf", bbox_inches='tight')
+        plt.savefig(self.output_dir + "/prediction_vs_solution_log.png", bbox_inches='tight')
 
 
     def do_cost_per_epoch_plot(self):
@@ -274,12 +276,12 @@ class plotting_pinn:
         for ax in axs:
             ax.label_outer()
         axs[0].legend(bbox_to_anchor=(1, 1))
-        fig.savefig(self.output_dir + "/cost_vs_epoch.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/cost_vs_epoch.png", bbox_inches='tight')
 
 
     def do_component_loss_train_plot(self):
 
-        #Comopnent losses  train
+        #Component losses  train
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -293,7 +295,7 @@ class plotting_pinn:
             axs[1].semilogy(np.linspace(1, N, num=N),
                             self.component_losses_train[:, i], label=self.fields[i])
 
-        fig.suptitle('Comonent wise error in training data')
+        fig.suptitle('Component wise error in training data')
         axs[1].set_xlabel("Num Epochs")
         axs[1].set_ylabel('Log Cost')
         axs[0].set_ylabel('Cost (MSE)')
@@ -301,12 +303,12 @@ class plotting_pinn:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2))
-        fig.savefig(self.output_dir + "/component_training_loss.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/component_training_loss.png", bbox_inches='tight')
 
 
 
     def do_component_loss_test_plot(self):
-        #Comopnent losses  test
+        #Component losses  test
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -320,7 +322,7 @@ class plotting_pinn:
             axs[1].semilogy(np.linspace(1, N, num=N), self.component_losses_test[:, i],
                             label=self.fields[i])
 
-        fig.suptitle('Comonent wise error in testing data')
+        fig.suptitle('Component wise error in testing data')
         axs[1].set_xlabel("Num Epochs")
         axs[1].set_ylabel('Log Cost')
         axs[0].set_ylabel('Cost (MSE)')
@@ -328,12 +330,12 @@ class plotting_pinn:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
-        fig.savefig(self.output_dir + "/component_testing_loss.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/component_testing_loss.png", bbox_inches='tight')
 
 
     def do_dcomponent_loss_train_plot(self):
 
-        #Comopnent losses  train
+        #Component losses  train
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -355,11 +357,11 @@ class plotting_pinn:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
-        fig.savefig(self.output_dir + "/d_component_training_loss.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/d_component_training_loss.png", bbox_inches='tight')
 
 
     def do_dcomponent_loss_test_plot(self):
-        #Comopnent losses  test
+        #Component losses  test
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -373,7 +375,7 @@ class plotting_pinn:
             axs[1].semilogy(np.linspace(1, N, num=N), self.d_component_losses_test[:, i],
                             label=self.fields[i])
 
-        fig.suptitle('Derivative comonent wise error in testing data')
+        fig.suptitle('Derivative component wise error in testing data')
         axs[1].set_xlabel("Num Epochs")
         axs[1].set_ylabel('Log Cost')
         axs[0].set_ylabel('Cost (MSE)')
@@ -381,11 +383,11 @@ class plotting_pinn:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
-        fig.savefig(self.output_dir + "/d_component_testing_loss.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/d_component_testing_loss.png", bbox_inches='tight')
 
 
     def do_d_component_loss_test_plot(self):
-        #Comopnent derivative losses  test
+        #Component derivative losses  test
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -399,7 +401,7 @@ class plotting_pinn:
             axs[1].semilogy(np.linspace(1, N, num=N), self.component_losses_test[:, i],
                             label=self.fields[i])
 
-        fig.suptitle('Comonent wise error in testing data')
+        fig.suptitle('Component wise error in testing data')
         axs[1].set_xlabel("Num Epochs")
         axs[1].set_ylabel('Log Cost')
         axs[0].set_ylabel('Cost (MSE)')
@@ -407,13 +409,13 @@ class plotting_pinn:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
-        fig.savefig(self.output_dir + "/d_component_testing_loss.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/d_component_testing_loss.png", bbox_inches='tight')
 
 
 
     def do_d_component_loss_train_plot(self):
 
-        #Comopnent losses  train
+        #Component losses  train
         fig = plt.figure()
         gs = fig.add_gridspec(2,1, hspace=0)
         axs = gs.subplots(sharex=True)
@@ -427,7 +429,7 @@ class plotting_pinn:
             axs[1].semilogy(np.linspace(1, N, num=N),
                             self.component_losses_train[:, i], label=self.fields[i])
 
-        fig.suptitle('Comonent wise error in training data')
+        fig.suptitle('Component wise error in training data')
         axs[1].set_xlabel("Num Epochs")
         axs[1].set_ylabel('Log Cost')
         axs[0].set_ylabel('Cost (MSE)')
@@ -435,8 +437,7 @@ class plotting_pinn:
         for ax in axs:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2), borderaxespad=0.)
-        fig.savefig(self.output_dir + "/d_component_training_loss.pdf", bbox_inches='tight')
-
+        fig.savefig(self.output_dir + "/d_component_training_loss.png", bbox_inches='tight')
 
 
     def do_different_loss_plot(self):
@@ -463,11 +464,11 @@ class plotting_pinn:
         plt.legend(loc='upper left')
         plt.xlabel("epochs")
         plt.title("Various loss function values")
-        fig.savefig(self.output_dir + "/different_loss_functions.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/different_loss_functions.png", bbox_inches='tight')
 
         plt.yscale("log")
         plt.title("Log Various loss function values")
-        fig.savefig(self.output_dir + "/different_loss_log_functions.pdf", bbox_inches='tight')
+        fig.savefig(self.output_dir + "/different_loss_log_functions.png", bbox_inches='tight')
 
     def do_all_plots(self):
         self.do_cost_per_epoch_plot()

@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
+import maestroflame
+from maestroflame.tools import scaling_func
 
 def my_heaviside(x, input):
     y = torch.zeros_like(x)

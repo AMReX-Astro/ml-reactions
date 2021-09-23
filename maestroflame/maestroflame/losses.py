@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 def my_heaviside(x, input):
     y = torch.zeros_like(x)
     y[x < 0] = 0
@@ -44,17 +46,18 @@ def log_loss(prediction, target):
 
     #if there are negative numbers we cant use log on massfractions
     if torch.sum(X < 0) > 0:
-         #how much do we hate negative numbers?
-         factor = 1000 # a lot
-         return enuc_loss + factor*L(X, X_target)
+        #how much do we hate negative numbers?
+        factor = 1000 # a lot
+        return enuc_loss + factor*L(X, X_target)
 
     else:
-        barrier = torch.tensor([.1])
+        barrier = torch.tensor([.1], device=device)
+        value = torch.tensor([0.], device=device)
+
         #greater than barrier we apply mse loss
         #less then barier we apply log of mse loss
-
-        A = my_heaviside(target - barrier, torch.tensor([0.]))
-        B = -my_heaviside(target - barrier, torch.tensor([0.])) + 1
+        A = my_heaviside(target - barrier, value)
+        B = -my_heaviside(target - barrier, value) + 1
 
 
         X_loss =  torch.sum(A * L(X, X_target) + B* torch.abs(.01*L(torch.log(X), torch.log(X_target))))
@@ -123,46 +126,45 @@ def loss_pinn(input, prediction, target, enuc_fac, enuc_dot_fac,
             #if there are negative numbers we cant use log
             if torch.sum(prediction[:, var] < 0) > 0:
 
-                 #how much do we hate negative numbers?
-                 # factor = 1 #  negative numbers aren't bad here. we just need a better way to handle it.
-                 # return factor*L(prediction[:,var], target[:, nnuc+1+var])
+                #how much do we hate negative numbers?
+                # factor = 1 #  negative numbers aren't bad here. we just need a better way to handle it.
+                # return factor*L(prediction[:,var], target[:, nnuc+1+var])
 
+                pred = torch.abs(prediction[:, var])
 
-                 pred = torch.abs(prediction[:, var])
-
-                 barrier = torch.tensor([.1])
-                 #greater than barrier we apply mse loss
-                 #less then barier we apply log of mse loss
-
-                 barrier1 = torch.tensor([.1])
-                 barrier2 = torch.tensor([100])
-
-
-
-                 y1 = my_heaviside(target[:, nnuc+1:] - barrier1, torch.tensor([0.]))
-                 y2 = -my_heaviside(target[:, nnuc+1:] - barrier2, torch.tensor([0.])) + 1
-                 y3 = -my_heaviside(target[:, nnuc+1:] - barrier1, torch.tensor([0.])) + 1
-                 y4 = my_heaviside(target[:, nnuc+1:] - barrier2, torch.tensor([0.]))
-
-                 A = y1*y2
-                 B = torch.abs(y3-y4)
-
-                 L =  torch.sum(B * L(pred, target[:, nnuc+1+var]) + A* torch.abs(.01*L(torch.log(target[:, nnuc+1+var]), torch.log(pred))))
-
-            else:
-                barrier = torch.tensor([.1])
+                barrier = torch.tensor([.1], device=device)
                 #greater than barrier we apply mse loss
                 #less then barier we apply log of mse loss
 
-                barrier1 = torch.tensor([.1])
-                barrier2 = torch.tensor([100])
+                barrier1 = torch.tensor([.1], device=device)
+                barrier2 = torch.tensor([100], device=device)
+                value = torch.tensor([0.], device=device)
 
 
+                y1 = my_heaviside(target[:, nnuc+1:] - barrier1, value)
+                y2 = -my_heaviside(target[:, nnuc+1:] - barrier2, value) + 1
+                y3 = -my_heaviside(target[:, nnuc+1:] - barrier1, value) + 1
+                y4 = my_heaviside(target[:, nnuc+1:] - barrier2, value)
 
-                y1 = my_heaviside(target[:, nnuc+1:] - barrier1, torch.tensor([0.]))
-                y2 = -my_heaviside(target[:, nnuc+1:] - barrier2, torch.tensor([0.])) + 1
-                y3 = -my_heaviside(target[:, nnuc+1:] - barrier1, torch.tensor([0.])) + 1
-                y4 = my_heaviside(target[:, nnuc+1:] - barrier2, torch.tensor([0.]))
+                A = y1*y2
+                B = torch.abs(y3-y4)
+
+                L =  torch.sum(B * L(pred, target[:, nnuc+1+var]) + A* torch.abs(.01*L(torch.log(target[:, nnuc+1+var]), torch.log(pred))))
+
+            else:
+                barrier = torch.tensor([.1], device=device)
+                #greater than barrier we apply mse loss
+                #less then barier we apply log of mse loss
+
+                barrier1 = torch.tensor([.1], device=device)
+                barrier2 = torch.tensor([100], device=device)
+                value = torch.tensor([0.], device=device)
+
+
+                y1 = my_heaviside(target[:, nnuc+1:] - barrier1, value)
+                y2 = -my_heaviside(target[:, nnuc+1:] - barrier2, value) + 1
+                y3 = -my_heaviside(target[:, nnuc+1:] - barrier1, value) + 1
+                y4 = my_heaviside(target[:, nnuc+1:] - barrier2, value)
 
                 A = y1*y2
                 B = torch.abs(y3-y4)
@@ -189,17 +191,18 @@ def loss_pure(prediction, target, log_option = False):
 
         #if there are negative numbers we cant use log
         if torch.sum(prediction < 0) > 0:
-             #how much do we hate negative numbers?
-             factor = 1000 # a lot
-             return factor*L(prediction, target[:, :nnuc+1])
+            #how much do we hate negative numbers?
+            factor = 1000 # a lot
+            return factor*L(prediction, target[:, :nnuc+1])
 
         else:
-            barrier = torch.tensor([.1])
+            barrier = torch.tensor([.1], device=device)
+            value = torch.tensor([0.], device=device)
             #greater than barrier we apply mse loss
             #less then barier we apply log of mse loss
 
-            A = my_heaviside(target[:, :nnuc+1] - barrier, torch.tensor([0.]))
-            B = -my_heaviside(target[:, :nnuc+1] - barrier, torch.tensor([0.])) + 1
+            A = my_heaviside(target[:, :nnuc+1] - barrier, value)
+            B = -my_heaviside(target[:, :nnuc+1] - barrier, value) + 1
 
             L =  torch.sum(A * L(target[:, :nnuc+1], prediction) + B* torch.abs(.01*L(torch.log(target[:, :nnuc+1]), torch.log(prediction))))
 
@@ -217,13 +220,16 @@ def tanh_loss(dxdt, prediction):
     return torch.tanh(out)
 
 
-from tools.custom_loss_viz import scaling_func
+from .tools import scaling_func
 
-def derivative_loss_piecewise(dxdt, actual):
+def derivative_loss_piecewise(dxdt, actual, enuc_fac, enuc_dot_fac, nnuc=13):
 
     b1 = torch.tensor([.1])
     b2 = torch.tensor([100.])
     scaling = torch.tensor([.01])
+
+
+    dxdt[:, nnuc] = dxdt[:, nnuc] * enuc_fac/enuc_dot_fac
 
     scaled_dxdt = scaling_func(torch.abs(dxdt), lambda x : x, b1, b2, scaling)
     scaled_actual = scaling_func(torch.abs(actual), lambda x : x, b1, b2, scaling)
