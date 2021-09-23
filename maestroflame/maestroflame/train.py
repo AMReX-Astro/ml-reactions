@@ -128,7 +128,7 @@ class NuclearReactionML:
                 arr = np.array([dens_fac.item(), temp_fac.item(), enuc_fac.item()])
                 np.savetxt(self.output_dir + 'scaling_factors.txt', arr, header='Density, Temperature, Enuc factors (ordered)')
 
-                self.fields = [field[1] for field in yt.load(react_data.output_files[0])._field_list]
+                self.fields = [field for field in yt.load(react_data.output_files[0])._field_list]
 
 
                 #percent cut for testing

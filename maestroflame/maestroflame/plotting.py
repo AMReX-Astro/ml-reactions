@@ -63,13 +63,14 @@ class plotting_standard:
                     targets_whole = torch.cat((targets_whole, targets))
 
             #for batch_idx, (data, targets) in enumerate(self.test_loader):
-            pred = self.model(data)
+            pred = self.model(data_whole)
             #print(pred.shape)
-            for i in range(pred.shape[1]):
+            for i in range(pred.shape[0]):
                 if i == 0:
-                    plt.scatter(pred[i,:], targets[i,:], c=colors, label=self.fields[i])
+                    for j in range(pred.shape[1]):
+                        plt.scatter(pred[i,j], targets_whole[i,j], color=colors[j], label=self.fields[j])
                 else:
-                    plt.scatter(pred[i, :], targets[i, :self.nnuc+1], c=colors)
+                    plt.scatter(pred[i, :], targets_whole[i, :self.nnuc+1], c=colors)
         # plt.figure()
         # #N = react_data.output_data.shape[1]
         # colors = matplotlib.cm.rainbow(np.linspace(0, 1, self.N_fields))
@@ -231,13 +232,14 @@ class plotting_pinn:
                     targets_whole = torch.cat((targets_whole, targets))
 
             #for batch_idx, (data, targets) in enumerate(self.test_loader):
-            pred = self.model(data)
+            pred = self.model(data_whole)
             #print(pred.shape)
-            for i in range(pred.shape[1]):
+            for i in range(pred.shape[0]):
                 if i == 0:
-                    plt.scatter(pred[i,:], targets[i,:self.nnuc+1], c=colors, label=self.fields[i])
+                    for j in range(pred.shape[1]):
+                        plt.scatter(pred[i,j], targets_whole[i,j], color=colors[j], label=self.fields[j])
                 else:
-                    plt.scatter(pred[i, :self.nnuc+1], targets[i, :self.nnuc+1], c=colors)
+                    plt.scatter(pred[i, :self.nnuc+1], targets_whole[i, :self.nnuc+1], c=colors)
 
 
 
