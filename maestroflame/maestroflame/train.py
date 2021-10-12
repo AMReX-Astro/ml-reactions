@@ -242,27 +242,31 @@ class NuclearReactionML:
                 self.cost_per_epoc.append(sum(plotting_losses) / len(plotting_losses))
 
                 if self.DO_PLOTTING:
+                    model.eval()
 
-                    #Evaulate NN on testing data.
-                    for batch_idx, (data, targets) in enumerate(self.test_loader):
-                        # Get data to cuda if possible
-                        data = data.to(device=device)
-                        targets = targets.to(device=device)
+                    with torch.no_grad():
+                        #Evaulate NN on testing data.
+                        for batch_idx, (data, targets) in enumerate(self.test_loader):
+                            # Get data to cuda if possible
+                            data = data.to(device=device)
+                            targets = targets.to(device=device)
 
-                        # forward
-                        pred = model(data)
-                        loss = criterion_plotting(pred, targets)
-                        losses.append(loss.item())
+                            # forward
+                            pred = model(data)
+                            loss = criterion_plotting(pred, targets)
+                            losses.append(loss.item())
 
-                        loss_c = component_loss_f(pred, targets)
-                        loss_c = np.array(loss_c.tolist())
-                        if batch_idx == 0:
-                            component_loss = loss_c
-                        else:
-                            component_loss = component_loss + loss_c
+                            loss_c = component_loss_f(pred, targets)
+                            loss_c = np.array(loss_c.tolist())
+                            if batch_idx == 0:
+                                component_loss = loss_c
+                            else:
+                                component_loss = component_loss + loss_c
 
-                    self.cost_per_epoc_test.append(sum(losses) / len(losses))
-                    self.component_losses_test.append(component_loss/batch_idx)
+                        self.cost_per_epoc_test.append(sum(losses) / len(losses))
+                        self.component_losses_test.append(component_loss/batch_idx)
+
+                    model.train()
 
             self.component_losses_test = np.array(self.component_losses_test)
             self.component_losses_train = np.array(self.component_losses_train)
@@ -593,6 +597,7 @@ class NuclearReactionPinn:
 
 
             if self.DO_PLOTTING:
+                model.eval()
 
                 for batch_idx, (data, targets) in enumerate(self.train_loader):
                     # Get data to cuda if possible
@@ -633,6 +638,7 @@ class NuclearReactionPinn:
                         component_loss = component_loss + loss_c
                         d_component_loss = d_component_loss + dloss_c
 
+                model.train()
 
                 self.cost_per_epoc_test.append(sum(losses) / len(losses))
                 self.component_losses_test.append(component_loss/batch_idx)
