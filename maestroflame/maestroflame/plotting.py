@@ -49,6 +49,8 @@ class plotting_standard:
         #N = react_data.output_data.shape[1]
         colors = matplotlib.cm.rainbow(np.linspace(0, 1, self.nnuc+1))
         #fields = [field[1] for field in yt.load(react_data.output_files[0]).field_list]
+        self.model.eval()
+
         with torch.no_grad():
             losses = []
 
@@ -71,6 +73,8 @@ class plotting_standard:
                         plt.scatter(pred[i,j], targets_whole[i,j], color=colors[j], label=self.fields[j])
                 else:
                     plt.scatter(pred[i, :], targets_whole[i, :self.nnuc+1], c=colors)
+
+        self.model.train()
         # plt.figure()
         # #N = react_data.output_data.shape[1]
         # colors = matplotlib.cm.rainbow(np.linspace(0, 1, self.N_fields))
@@ -218,6 +222,8 @@ class plotting_pinn:
         #N = react_data.output_data.shape[1]
         colors = matplotlib.cm.rainbow(np.linspace(0, 1, self.nnuc+1))
         #fields = [field[1] for field in yt.load(react_data.output_files[0]).field_list]
+        self.model.eval()
+        
         with torch.no_grad():
             losses = []
 
@@ -241,7 +247,7 @@ class plotting_pinn:
                 else:
                     plt.scatter(pred[i, :self.nnuc+1], targets_whole[i, :self.nnuc+1], c=colors)
 
-
+        self.model.train()
 
         plt.plot(np.linspace(0, 1), np.linspace(0,1), '--', color='orange')
         #plt.legend(yt.load(react_data.output_files[0]).field_list, colors=colors)
