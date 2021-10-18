@@ -109,10 +109,10 @@ class NuclearReactionML:
 
 
                 #LOADING DATA----------------------------------------------------------
-                # plotfiles = glob(data_path + plotfile_prefix)
-                # plotfiles = sorted(plotfiles)
-                # plotfiles = plotfiles[:-2] #cut after divuiter and initproj
-                # plotfiles = [plotfiles[-1]] + plotfiles[:-1] #move initdata to front.
+                plotfiles = glob(data_path + plotfile_prefix)
+                plotfiles = sorted(plotfiles)
+                plotfiles = plotfiles[:-2] #cut after divuiter and initproj
+                plotfiles = [plotfiles[-1]] + plotfiles[:-1] #move initdata to front.
                 #make_movie(plotfiles, movie_name='enuc.mp4', var='enuc')
 
                 react_data = ReactDataset(data_path, input_prefix, output_prefix, plotfile_prefix, DEBUG_MODE=DEBUG_MODE)
