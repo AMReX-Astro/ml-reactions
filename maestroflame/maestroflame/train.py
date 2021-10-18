@@ -21,6 +21,7 @@ from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
 from .reactdataset import ReactDataset
 from .losses import component_loss_f, component_loss_f_L1
+from .plotting import plotting_standard, plotting_pinn
 
 
 yt.funcs.mylog.setLevel(40) # Gets rid of all of the yt info text, only errors.
@@ -108,10 +109,10 @@ class NuclearReactionML:
 
 
                 #LOADING DATA----------------------------------------------------------
-                plotfiles = glob(data_path + plotfile_prefix)
-                plotfiles = sorted(plotfiles)
-                plotfiles = plotfiles[:-2] #cut after divuiter and initproj
-                plotfiles = [plotfiles[-1]] + plotfiles[:-1] #move initdata to front.
+                # plotfiles = glob(data_path + plotfile_prefix)
+                # plotfiles = sorted(plotfiles)
+                # plotfiles = plotfiles[:-2] #cut after divuiter and initproj
+                # plotfiles = [plotfiles[-1]] + plotfiles[:-1] #move initdata to front.
                 #make_movie(plotfiles, movie_name='enuc.mp4', var='enuc')
 
                 react_data = ReactDataset(data_path, input_prefix, output_prefix, plotfile_prefix, DEBUG_MODE=DEBUG_MODE)
@@ -190,7 +191,16 @@ class NuclearReactionML:
                 self.logger.write("unsupported optimizer, please define it.")
                 sys.exit()
 
-    def train(self, model, optimizer, num_epochs, criterion):
+    def train(self, model, optimizer, num_epochs, criterion, save_every_N=np.Inf):
+            '''
+            save_every_N - int representing every N epochs output the pytorch model.
+                         Defaulted at infinity, meaning it won't output intermediately
+            '''
+
+            if save_every_N < np.Inf:
+                os.mkdir(self.output_dir+'intermediate_output/')
+
+
             #As we test different loss functions, its important to keep a consistent one when
             #plotting or else we have no way of comparing them.
             criterion_plotting = nn.MSELoss()
@@ -236,10 +246,27 @@ class NuclearReactionML:
                     optimizer.step()
 
 
-
                 self.logger.write(f"Cost at epoch {epoch} is {sum(losses) / len(losses)}")
                 self.component_losses_train.append(component_loss/batch_idx)
                 self.cost_per_epoc.append(sum(plotting_losses) / len(plotting_losses))
+
+                with torch.no_grad():
+                    if epoch % save_every_N == 0 and epoch != 0:
+                        directory = self.output_dir+'intermediate_output/epoch'+str(epoch)+'/'
+                        os.mkdir(directory)
+
+
+                        torch.save(model.state_dict(), directory+'my_model.pt')
+                        np.savetxt(directory + "/cost_per_epoch.txt", self.cost_per_epoc)
+                        np.savetxt(directory + "/component_losses_test.txt", self.component_losses_test)
+                        np.savetxt(directory + "/component_losses_train.txt", self.component_losses_train)
+
+
+                        plot_class = plotting_standard(model, self.fields, self.test_loader, self.cost_per_epoc, np.array(self.component_losses_test),
+                                                np.array(self.component_losses_train), self.cost_per_epoc_test, directory)
+
+                        plot_class.do_all_plots()
+
 
                 if self.DO_PLOTTING:
 
@@ -269,11 +296,23 @@ class NuclearReactionML:
 
             self.model = model
 
+            if self.SAVE_MODEL:
+                self.logger.write("Saving...")
+                file_name = self.output_dir + 'my_model.pt'
+                if os.path.exists(file_name):
+                    self.logger.write("Overwritting file:", file_name)
+                    os.rename(file_name, file_name+'.backup')
+
+                torch.save(model.state_dict(), file_name)
+                np.savetxt(self.output_dir + "/cost_per_epoch.txt", self.cost_per_epoc)
+                np.savetxt(self.output_dir + "/component_losses_test.txt", self.component_losses_test)
+                np.savetxt(self.output_dir + "/component_losses_train.txt", self.component_losses_train)
+
+
 
 
     def plot(self):
             self.logger.write("Plotting...")
-            from .plotting import plotting_standard
 
             plot_class = plotting_standard(self.model, self.fields, self.test_loader, self.cost_per_epoc, self.component_losses_test,
                         self.component_losses_train, self.cost_per_epoc_test, self.output_dir)
@@ -462,7 +501,15 @@ class NuclearReactionPinn:
 
 
 
-    def train(self, model, optimizer, num_epochs, criterion):
+    def train(self, model, optimizer, num_epochs, criterion, save_every_N=np.Inf):
+        '''
+        save_every_N - int representing every N epochs output the pytorch model.
+                     Defaulted at infinity, meaning it won't output intermediately
+        '''
+
+        if save_every_N < np.Inf:
+            os.mkdir(self.output_dir+'intermediate_output/')
+
 
         #As we test different loss functions, its important to keep a consistent one when
         #plotting or else we have no way of comparing them.
@@ -591,6 +638,30 @@ class NuclearReactionPinn:
             diff_losses = np.array(diff_losses)
             self.different_loss_metrics.append(diff_losses.sum(axis=0)/len(losses))
 
+            with torch.no_grad():
+                if epoch % save_every_N == 0 and epoch != 0:
+                    directory = self.output_dir+'intermediate_output/epoch'+str(epoch)+'/'
+                    os.mkdir(directory)
+
+
+                    torch.save(model.state_dict(), directory+'my_model.pt')
+                    np.savetxt(directory + "/cost_per_epoch.txt", self.cost_per_epoc)
+                    np.savetxt(directory + "/component_losses_test.txt", self.component_losses_test)
+                    np.savetxt(directory + "/component_losses_train.txt", self.component_losses_train)
+                    np.savetxt(self.output_dir + "/d_component_losses_test.txt", self.d_component_losses_test)
+                    np.savetxt(self.output_dir + "/d_component_losses_train.txt", self.d_component_losses_train)
+
+
+                    plot_class = plotting_pinn(self.model, self.fields, self.test_loader, self.cost_per_epoc,
+                                np.array(self.component_losses_test), np.array(self.component_losses_train),
+                                np.array(self.d_component_losses_test), np.array(self.d_component_losses_train),
+                                self.cost_per_epoc_test, np.array(self.different_loss_metrics),
+                                self.output_dir)
+
+                    plot_class.do_all_plots()
+
+
+
 
             if self.DO_PLOTTING:
 
@@ -681,7 +752,6 @@ class NuclearReactionPinn:
     def plot(self):
 
         self.logger.write("Plotting...")
-        from .plotting import plotting_pinn
 
         plot_class = plotting_pinn(self.model, self.fields, self.test_loader, self.cost_per_epoc,
                     self.component_losses_test, self.component_losses_train,
