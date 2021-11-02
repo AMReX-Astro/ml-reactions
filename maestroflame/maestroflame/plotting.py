@@ -22,8 +22,9 @@ class plotting_standard:
     #then just call the methods for whatever plots you want.
 
     def __init__(self, model, fields, test_loader, cost_per_epoc,
-                component_losses_test, component_losses_train,
-                cost_per_epoc_test, output_dir):
+                 component_losses_test, component_losses_train,
+                 cost_per_epoc_test, output_dir, LOG_MODE=True):
+        self.LOG_MODE = LOG_MODE
 
         self.model = model
         self.fields = fields
@@ -67,6 +68,13 @@ class plotting_standard:
             #for batch_idx, (data, targets) in enumerate(self.test_loader):
             pred = self.model(data_whole)
             #print(pred.shape)
+
+            if self.LOG_MODE:
+                # convert all mass fractions back from their log form
+                data_whole[:,:self.nnuc] = torch.exp(-0.5/data_whole[:,:self.nnuc])
+                targets_whole[:,:self.nnuc] = torch.exp(-0.5/targets_whole[:,:self.nnuc])
+                pred[:,:self.nnuc] = torch.exp(-0.5/pred[:,:self.nnuc])
+
             for i in range(pred.shape[0]):
                 if i == 0:
                     for j in range(pred.shape[1]):
@@ -154,7 +162,6 @@ class plotting_standard:
         fig.savefig(self.output_dir + "/component_training_loss.png", bbox_inches='tight')
 
 
-
     def do_component_loss_test_plot(self):
         #Component losses  test
         fig = plt.figure()
@@ -179,7 +186,7 @@ class plotting_standard:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2))
         fig.savefig(self.output_dir + "/component_testing_loss.png", bbox_inches='tight')
-
+        
     def do_all_plots(self):
         self.do_cost_per_epoch_plot()
         self.do_component_loss_train_plot()

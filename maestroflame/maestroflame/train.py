@@ -33,8 +33,8 @@ class NuclearReactionML:
 
 
     def __init__(self, data_path, input_prefix, output_prefix, plotfile_prefix,
-                output_dir, log_file, DEBUG_MODE=True, DO_PLOTTING=True,
-                SAVE_MODEL=True, DO_HYPER_OPTIMIZATION=False):
+                 output_dir, log_file, DEBUG_MODE=True, DO_PLOTTING=True,
+                 SAVE_MODEL=True, DO_HYPER_OPTIMIZATION=False, LOG_MODE=True):
                 """
                 data_path (string): this is the path to your data files
 
@@ -83,6 +83,7 @@ class NuclearReactionML:
                 self.output_dir = output_dir
                 self.SAVE_MODEL = SAVE_MODEL
                 self.DO_HYPER_OPTIMIZATION = DO_HYPER_OPTIMIZATION
+                self.LOG_MODE = LOG_MODE
 
                 if os.path.isdir(output_dir) and (len(os.listdir(output_dir)) != 0):
                     print(f"Directory {output_dir} exists and is not empty.")
@@ -128,8 +129,14 @@ class NuclearReactionML:
                 #save these factors to a file
                 arr = np.array([dens_fac.item(), temp_fac.item(), enuc_fac.item()])
                 np.savetxt(self.output_dir + 'scaling_factors.txt', arr, header='Density, Temperature, Enuc factors (ordered)')
+                if self.LOG_MODE:
+                    #take 1/log of mass fractions of species 
+                    react_data.input_data[:,1:14,:] = -0.5/torch.log(react_data.input_data[:,1:14,:])
+                    react_data.output_data[:,:13,:] = -0.5/torch.log(react_data.output_data[:,:13,:])
 
                 self.fields = [field for field in yt.load(react_data.output_files[0])._field_list]
+                #truncate to mass fractions + enuc only
+                self.fields = self.field[:14] 
 
 
                 #percent cut for testing
