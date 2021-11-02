@@ -311,7 +311,7 @@ class NuclearReactionML:
                 self.logger.write("Saving...")
                 file_name = self.output_dir + 'my_model.pt'
                 if os.path.exists(file_name):
-                    self.logger.write("Overwritting file:", file_name)
+                    self.logger.write(f"Overwriting file: {file_name}")
                     os.rename(file_name, file_name+'.backup')
 
                 torch.save(model.state_dict(), file_name)

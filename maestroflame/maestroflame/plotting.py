@@ -110,6 +110,8 @@ class plotting_standard:
         plt.xscale("log")
         plt.savefig(self.output_dir + "/prediction_vs_solution_log.png", bbox_inches='tight')
 
+        plt.close()
+
 
     def do_cost_per_epoch_plot(self):
         ############## Cost per eppoc plot#####################
@@ -133,6 +135,8 @@ class plotting_standard:
             ax.label_outer()
         axs[0].legend(bbox_to_anchor=(1, 1))
         fig.savefig(self.output_dir + "/cost_vs_epoch.png", bbox_inches='tight')
+
+        plt.close(fig)
 
 
     def do_component_loss_train_plot(self):
@@ -161,6 +165,8 @@ class plotting_standard:
         plt.legend(bbox_to_anchor=(1, 2))
         fig.savefig(self.output_dir + "/component_training_loss.png", bbox_inches='tight')
 
+        plt.close(fig)
+
 
     def do_component_loss_test_plot(self):
         #Component losses  test
@@ -186,7 +192,10 @@ class plotting_standard:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2))
         fig.savefig(self.output_dir + "/component_testing_loss.png", bbox_inches='tight')
-        
+
+        plt.close(fig)
+
+
     def do_all_plots(self):
         self.do_cost_per_epoch_plot()
         self.do_component_loss_train_plot()
