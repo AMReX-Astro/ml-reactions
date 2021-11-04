@@ -326,7 +326,7 @@ class NuclearReactionML:
             self.logger.write("Plotting...")
 
             plot_class = plotting_standard(self.model, self.fields, self.test_loader, self.cost_per_epoc, self.component_losses_test,
-                        self.component_losses_train, self.cost_per_epoc_test, self.output_dir)
+                        self.component_losses_train, self.cost_per_epoc_test, self.output_dir, self.LOG_MODE)
 
             plot_class.do_all_plots()
 
