@@ -136,7 +136,7 @@ class NuclearReactionML:
 
                 self.fields = [field for field in yt.load(react_data.output_files[0])._field_list]
                 #truncate to mass fractions + enuc only
-                self.fields = self.field[:14] 
+                self.fields = self.fields[:14] 
 
 
                 #percent cut for testing
