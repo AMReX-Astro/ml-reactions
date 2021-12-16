@@ -9,6 +9,8 @@ setup(
     license='LICENSE.txt',
     description='Machine Learning interface for learning a MAESTROeX flame.',
     long_description=open('README.md').read(),
+    package_data={'': ['pred_v_sol.jl', 'julia_env/Manifest.toml', 'julia_env/Project.toml']},
+    include_package_data=True,
     install_requires=[
         "matplotlib==3.4.1",
         "optuna==2.8.0",

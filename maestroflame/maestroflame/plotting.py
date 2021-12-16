@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 import matplotlib
 import torch
 import os
+import sys
+import julia
+import time
+from numpy import errstate,isneginf, isposinf
 
 def make_movie(file_list, save_dir='./', var='enuc', movie_name="flame.mp4"):
     i = 1
@@ -40,7 +44,7 @@ class plotting_standard:
             os.mkdir(output_dir)
 
 
-    def do_prediction_vs_solution_plot(self):
+    def do_prediction_vs_solution_plot(self, use_julia=False):
         ############ Prediction Vs Solution Plot Should fall one y=x line.
 
         plt.figure()
@@ -65,18 +69,100 @@ class plotting_standard:
             #for batch_idx, (data, targets) in enumerate(self.test_loader):
             pred = self.model(data_whole)
 
-            for i in range(pred.shape[1]):
-                plt.scatter(pred[:, i], targets_whole[:, i], color=colors[i], label=self.fields[i])
-            plt.plot(np.linspace(0, 1), np.linspace(0,1), '--', color='orange')
-            #plt.legend(yt.load(react_data.output_files[0]).field_list, colors=colors)
-            plt.legend(bbox_to_anchor=(1, 1))
-            plt.xlabel('Prediction')
-            plt.ylabel('Solution')
-            plt.savefig(self.output_dir + "/prediction_vs_solution.png", bbox_inches='tight')
 
-            plt.yscale("log")
-            plt.xscale("log")
-            plt.savefig(self.output_dir + "/prediction_vs_solution_log.png", bbox_inches='tight')
+            if use_julia:
+
+                outer_start_time = time.time()
+                start_time = time.time()
+
+
+                # if self.output_dir[0] != '/':
+                #     print("You must supply output_dir as an absolute path if you are going to \
+                #             to use julia plotting!")
+                #     sys.exit()
+                #
+                dir_path = os.path.dirname(os.path.realpath(__file__)) #+ '/maestroflame/'
+
+
+                np.savetxt(self.output_dir + '/targets.txt', targets_whole)
+                np.savetxt(self.output_dir + '/pred.txt', pred)
+                #np.savetxt(self.output_dir + '/labels.txt', self.fields + [self.output_dir, dir_path], fmt="%s")
+
+                from julia.api import LibJulia
+                api = LibJulia.load()
+                #api.sysimage = "sys_plots.so"
+                api.sysimage = "../tools/sys.so"
+                api.init_julia()
+                from julia import Plots
+
+                print("--- Internal Timing Julia")
+                print("%s seconds to start julia " % (time.time() - start_time))
+                start_time = time.time()
+
+                #TODO: can't get labels to work.
+                #Plots.scatter(pred, targets_whole, labels=self.fields, dpi=600)
+
+                pred_plot = pred.cpu().detach().numpy()
+                targets_plot = targets_whole.cpu().detach().numpy()
+
+                Plots.scatter(pred_plot, targets_plot, dpi=600, xlabel='Prediction', ylabel='Solution')
+                Plots.savefig(self.output_dir + "julia_prediction_vs_solution.png")
+
+                #screen out zeros when taking log. Julia log plots can't handle zeros
+                #so we just do it for them.
+
+                with errstate(divide='ignore'):
+                    pred_plot = np.log10(pred_plot)
+                    targets_plot = np.log10(targets_plot)
+
+                    #screen
+                pred_plot_sc = pred_plot
+                targets_plot_sc = targets_plot
+
+                mask = np.isinf(pred_plot) + np.isinf(targets_plot) + np.isnan(pred_plot) + np.isnan(targets_plot)
+
+                pred_plot_sc[mask]=0.
+                targets_plot_sc[mask]=0.
+                print("%s seconds to do preprocessing " % (time.time() - start_time))
+                start_time = time.time()
+
+                Plots.scatter(pred_plot, targets_plot, dpi=600, xlabel='log10(Prediction)', ylabel='log10(Solution)')
+                Plots.savefig(self.output_dir + "julia_prediction_vs_solution_log.png")
+                print("%s seconds to do plot " % (time.time() - start_time))
+                print("%s seconds total for first julia plotting method " % (time.time() - outer_start_time))
+
+
+                outer_start_time = time.time()
+                start_time = time.time()
+
+                if not os.path.isdir(dir_path + "/python_to_julia_data"):
+                    os.mkdir(dir_path + "/python_to_julia_data")
+                np.savetxt(dir_path + "/python_to_julia_data/"+"pred.txt", pred)
+                np.savetxt(dir_path + "/python_to_julia_data/"+"targets.txt", targets_whole)
+                str_to_julia = self.fields + [self.output_dir]
+
+                np.savetxt(dir_path + "/python_to_julia_data/"+"labels.txt", str_to_julia, fmt="%s")
+                print("%s seconds to save data to file " % (time.time() - start_time))
+                start_time = time.time()
+
+
+                os.system(f"julia {dir_path}"+"/pred_v_sol.jl")
+                print("%s seconds to run julia pred_v_sol.jl " % (time.time() - start_time))
+                print("%s seconds total to run julia method 2 " % (time.time() - outer_start_time))
+
+            else:
+                for i in range(pred.shape[1]):
+                    plt.scatter(pred[:, i], targets_whole[:, i], color=colors[i], label=self.fields[i])
+                plt.plot(np.linspace(0, 1), np.linspace(0,1), '--', color='orange')
+                #plt.legend(yt.load(react_data.output_files[0]).field_list, colors=colors)
+                plt.legend(bbox_to_anchor=(1, 1))
+                plt.xlabel('Prediction')
+                plt.ylabel('Solution')
+                plt.savefig(self.output_dir + "/prediction_vs_solution.png", bbox_inches='tight')
+
+                plt.yscale("log")
+                plt.xscale("log")
+                plt.savefig(self.output_dir + "/prediction_vs_solution_log.png", bbox_inches='tight')
 
         self.model.train()
 
