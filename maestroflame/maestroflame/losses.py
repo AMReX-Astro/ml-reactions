@@ -90,6 +90,29 @@ def logX_loss(prediction, target):
 
     return factor * L(X, X_target) + enuc_loss
 
+def logX_loss_2(prediction, target):
+    # We are working with mass fractions in the form of -1/log(X_k)
+
+    X = prediction[:, :13]
+    X_target = target[:, :13]
+    enuc = prediction[:, 13]
+    enuc_target = target[:, 13]
+
+    L = nn.MSELoss()
+    F = nn.L1Loss()
+
+    # enuc is allowed to be negative, but should not be
+    enuc_fac = 1
+    enuc_loss = enuc_fac * L(enuc, enuc_target) 
+
+    # we do not want negative values for mass fractions
+    if torch.sum(X < 0) > 0:
+        #how much do we hate negative numbers?
+        factor = 1000  #a lot
+    else:
+        factor = 1
+
+    return factor * L(X, X_target) + enuc_loss
 
 def rms_weighted_error(input, target, solution, atol=1e-6, rtol=1e-6):
     error_weight = atol + rtol * torch.abs(solution)
@@ -204,15 +227,24 @@ def loss_pinn(input, prediction, target, enuc_fac, enuc_dot_fac,
         return loss
 
 def loss_mass_fraction(prediction, nnuc=13):
-    return 10* torch.abs(1 - torch.sum(prediction[:, :nnuc]))
+    F = nn.L1Loss()
+    total = torch.ones(prediction.shape[0], device=device)
+    
+    return 10* F(torch.sum(prediction[:, :nnuc], 1), total)
 
 def loss_mass_fraction_log(prediction, nnuc=13):
+    F = nn.L1Loss()
+    total = torch.ones(prediction.shape[0], device=device)
+    mass_fraction = torch.exp(-0.5/prediction[:, :nnuc])
+    
+    return F(torch.sum(mass_fraction, 1), total)
+
+def loss_mass_fraction_L(prediction, nnuc=13):
     L = nn.MSELoss()
     total = torch.ones(prediction.shape[0], device=device)
     mass_fraction = torch.exp(-0.5/prediction[:, :nnuc])
     
     return L(torch.sum(mass_fraction, 1), total)
-
 
 def loss_pure(prediction, target, log_option = False):
 
