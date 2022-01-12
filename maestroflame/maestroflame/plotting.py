@@ -21,8 +21,9 @@ class plotting_standard:
     #then just call the methods for whatever plots you want.
 
     def __init__(self, model, fields, test_loader, cost_per_epoc,
-                component_losses_test, component_losses_train,
-                cost_per_epoc_test, output_dir):
+                 component_losses_test, component_losses_train,
+                 cost_per_epoc_test, output_dir, LOG_MODE=True):
+        self.LOG_MODE = LOG_MODE
 
         self.model = model
         self.fields = fields
@@ -65,6 +66,12 @@ class plotting_standard:
             #for batch_idx, (data, targets) in enumerate(self.test_loader):
             pred = self.model(data_whole)
 
+            if self.LOG_MODE:
+                # convert all mass fractions back from their log form
+                data_whole[:,:self.nnuc] = torch.exp(-0.5/data_whole[:,:self.nnuc])
+                targets_whole[:,:self.nnuc] = torch.exp(-0.5/targets_whole[:,:self.nnuc])
+                pred[:,:self.nnuc] = torch.exp(-0.5/pred[:,:self.nnuc])
+
             for i in range(pred.shape[1]):
                 plt.scatter(pred[:, i], targets_whole[:, i], color=colors[i], label=self.fields[i])
             plt.plot(np.linspace(0, 1), np.linspace(0,1), '--', color='orange')
@@ -81,6 +88,8 @@ class plotting_standard:
         self.model.train()
 
 
+
+        plt.close()
 
 
     def do_cost_per_epoch_plot(self):
@@ -105,6 +114,8 @@ class plotting_standard:
             ax.label_outer()
         axs[0].legend(bbox_to_anchor=(1, 1))
         fig.savefig(self.output_dir + "/cost_vs_epoch.png", bbox_inches='tight')
+
+        plt.close(fig)
 
 
     def do_component_loss_train_plot(self):
@@ -133,6 +144,7 @@ class plotting_standard:
         plt.legend(bbox_to_anchor=(1, 2))
         fig.savefig(self.output_dir + "/component_training_loss.png", bbox_inches='tight')
 
+        plt.close(fig)
 
 
     def do_component_loss_test_plot(self):
@@ -159,6 +171,9 @@ class plotting_standard:
             ax.label_outer()
         plt.legend(bbox_to_anchor=(1, 2))
         fig.savefig(self.output_dir + "/component_testing_loss.png", bbox_inches='tight')
+
+        plt.close(fig)
+
 
     def do_all_plots(self):
         self.do_cost_per_epoch_plot()
