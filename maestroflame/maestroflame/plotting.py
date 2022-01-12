@@ -16,7 +16,6 @@ def make_movie(file_list, save_dir='./', var='enuc', movie_name="flame.mp4"):
     os.system("rm movie_imag*")
     Video("movie.mp4", embed=True)
 
-
 class plotting_standard:
     #class to make it easy to plot things from driver. Set up all the data
     #then just call the methods for whatever plots you want.
@@ -45,7 +44,6 @@ class plotting_standard:
     def do_prediction_vs_solution_plot(self):
         ############ Prediction Vs Solution Plot Should fall one y=x line.
 
-
         plt.figure()
         #N = react_data.output_data.shape[1]
         colors = matplotlib.cm.rainbow(np.linspace(0, 1, self.nnuc+1))
@@ -67,7 +65,6 @@ class plotting_standard:
 
             #for batch_idx, (data, targets) in enumerate(self.test_loader):
             pred = self.model(data_whole)
-            #print(pred.shape)
 
             if self.LOG_MODE:
                 # convert all mass fractions back from their log form
@@ -75,40 +72,22 @@ class plotting_standard:
                 targets_whole[:,:self.nnuc] = torch.exp(-0.5/targets_whole[:,:self.nnuc])
                 pred[:,:self.nnuc] = torch.exp(-0.5/pred[:,:self.nnuc])
 
-            for i in range(pred.shape[0]):
-                if i == 0:
-                    for j in range(pred.shape[1]):
-                        plt.scatter(pred[i,j], targets_whole[i,j], color=colors[j], label=self.fields[j])
-                else:
-                    plt.scatter(pred[i, :], targets_whole[i, :self.nnuc+1], c=colors)
+            for i in range(pred.shape[1]):
+                plt.scatter(pred[:, i], targets_whole[:, i], color=colors[i], label=self.fields[i])
+            plt.plot(np.linspace(0, 1), np.linspace(0,1), '--', color='orange')
+            #plt.legend(yt.load(react_data.output_files[0]).field_list, colors=colors)
+            plt.legend(bbox_to_anchor=(1, 1))
+            plt.xlabel('Prediction')
+            plt.ylabel('Solution')
+            plt.savefig(self.output_dir + "/prediction_vs_solution.png", bbox_inches='tight')
+
+            plt.yscale("log")
+            plt.xscale("log")
+            plt.savefig(self.output_dir + "/prediction_vs_solution_log.png", bbox_inches='tight')
 
         self.model.train()
-        # plt.figure()
-        # #N = react_data.output_data.shape[1]
-        # colors = matplotlib.cm.rainbow(np.linspace(0, 1, self.N_fields))
-        # #fields = [field[1] for field in yt.load(react_data.output_files[0]).field_list]
-        # with torch.no_grad():
-        #     losses = []
-        #     for batch_idx, (data, targets) in enumerate(self.test_loader):
-        #         pred = self.model(data)
-        #         for i in range(pred.shape[0]):
-        #             if i == 0 and batch_idx == 0:
-        #                 for j in range(pred.shape[1]):
-        #                     plt.scatter(pred[i,j], targets[i,j], color=colors[j], label=self.fields[j])
-        #             else:
-        #                 plt.scatter(pred[i, :], targets[i, :], c=colors)
-        #         # if batch_idx == 100:
-        #         #     break
-        plt.plot(np.linspace(0, 1), np.linspace(0,1), '--', color='orange')
-        #plt.legend(yt.load(react_data.output_files[0]).field_list, colors=colors)
-        plt.legend(bbox_to_anchor=(1, 1))
-        plt.xlabel('Prediction')
-        plt.ylabel('Solution')
-        plt.savefig(self.output_dir + "/prediction_vs_solution.png", bbox_inches='tight')
 
-        plt.yscale("log")
-        plt.xscale("log")
-        plt.savefig(self.output_dir + "/prediction_vs_solution_log.png", bbox_inches='tight')
+
 
         plt.close()
 
@@ -239,7 +218,7 @@ class plotting_pinn:
         colors = matplotlib.cm.rainbow(np.linspace(0, 1, self.nnuc+1))
         #fields = [field[1] for field in yt.load(react_data.output_files[0]).field_list]
         self.model.eval()
-        
+
         with torch.no_grad():
             losses = []
 
@@ -255,13 +234,9 @@ class plotting_pinn:
 
             #for batch_idx, (data, targets) in enumerate(self.test_loader):
             pred = self.model(data_whole)
-            #print(pred.shape)
-            for i in range(pred.shape[0]):
-                if i == 0:
-                    for j in range(pred.shape[1]):
-                        plt.scatter(pred[i,j], targets_whole[i,j], color=colors[j], label=self.fields[j])
-                else:
-                    plt.scatter(pred[i, :self.nnuc+1], targets_whole[i, :self.nnuc+1], c=colors)
+
+            for i in range(self.nnuc+1):
+                plt.scatter(pred[:, i], targets_whole[:, i], color=colors[i], label=self.fields[i])
 
         self.model.train()
 

@@ -257,22 +257,6 @@ class NuclearReactionML:
                 self.component_losses_train.append(component_loss/batch_idx)
                 self.cost_per_epoc.append(sum(plotting_losses) / len(plotting_losses))
 
-                with torch.no_grad():
-                    if epoch % save_every_N == 0 and epoch != 0:
-                        directory = self.output_dir+'intermediate_output/epoch'+str(epoch)+'/'
-                        os.mkdir(directory)
-
-
-                        torch.save(model.state_dict(), directory+'my_model.pt')
-                        np.savetxt(directory + "/cost_per_epoch.txt", self.cost_per_epoc)
-                        np.savetxt(directory + "/component_losses_test.txt", self.component_losses_test)
-                        np.savetxt(directory + "/component_losses_train.txt", self.component_losses_train)
-
-
-                        plot_class = plotting_standard(model, self.fields, self.test_loader, self.cost_per_epoc, np.array(self.component_losses_test),
-                                                np.array(self.component_losses_train), self.cost_per_epoc_test, directory)
-
-                        plot_class.do_all_plots()
 
 
                 if self.DO_PLOTTING:
@@ -302,8 +286,29 @@ class NuclearReactionML:
 
                     model.train()
 
+
+                with torch.no_grad():
+                    if epoch % save_every_N == 0 and epoch != 0:
+                        directory = self.output_dir+'intermediate_output/epoch'+str(epoch)+'/'
+                        os.mkdir(directory)
+
+
+                        torch.save(model.state_dict(), directory+'my_model.pt')
+                        np.savetxt(directory + "/cost_per_epoch.txt", self.cost_per_epoc)
+                        np.savetxt(directory + "/component_losses_test.txt", self.component_losses_test)
+                        np.savetxt(directory + "/component_losses_train.txt", self.component_losses_train)
+
+
+                        plot_class = plotting_standard(model, self.fields, self.test_loader, self.cost_per_epoc, np.array(self.component_losses_test),
+                                                np.array(self.component_losses_train), self.cost_per_epoc_test, directory)
+
+                        plot_class.do_all_plots()
+
+
             self.component_losses_test = np.array(self.component_losses_test)
             self.component_losses_train = np.array(self.component_losses_train)
+
+
 
             self.model = model
 
@@ -649,29 +654,6 @@ class NuclearReactionPinn:
             diff_losses = np.array(diff_losses)
             self.different_loss_metrics.append(diff_losses.sum(axis=0)/len(losses))
 
-            with torch.no_grad():
-                if epoch % save_every_N == 0 and epoch != 0:
-                    directory = self.output_dir+'intermediate_output/epoch'+str(epoch)+'/'
-                    os.mkdir(directory)
-
-
-                    torch.save(model.state_dict(), directory+'my_model.pt')
-                    np.savetxt(directory + "/cost_per_epoch.txt", self.cost_per_epoc)
-                    np.savetxt(directory + "/component_losses_test.txt", self.component_losses_test)
-                    np.savetxt(directory + "/component_losses_train.txt", self.component_losses_train)
-                    np.savetxt(self.output_dir + "/d_component_losses_test.txt", self.d_component_losses_test)
-                    np.savetxt(self.output_dir + "/d_component_losses_train.txt", self.d_component_losses_train)
-
-
-                    plot_class = plotting_pinn(self.model, self.fields, self.test_loader, self.cost_per_epoc,
-                                np.array(self.component_losses_test), np.array(self.component_losses_train),
-                                np.array(self.d_component_losses_test), np.array(self.d_component_losses_train),
-                                self.cost_per_epoc_test, np.array(self.different_loss_metrics),
-                                self.output_dir)
-
-                    plot_class.do_all_plots()
-
-
 
 
             if self.DO_PLOTTING:
@@ -721,6 +703,28 @@ class NuclearReactionPinn:
                 self.cost_per_epoc_test.append(sum(losses) / len(losses))
                 self.component_losses_test.append(component_loss/batch_idx)
                 self.d_component_losses_test.append(d_component_loss/batch_idx)
+
+            with torch.no_grad():
+                if epoch % save_every_N == 0 and epoch != 0:
+                    directory = self.output_dir+'intermediate_output/epoch'+str(epoch)+'/'
+                    os.mkdir(directory)
+
+
+                    torch.save(model.state_dict(), directory+'my_model.pt')
+                    np.savetxt(directory + "/cost_per_epoch.txt", self.cost_per_epoc)
+                    np.savetxt(directory + "/component_losses_test.txt", self.component_losses_test)
+                    np.savetxt(directory + "/component_losses_train.txt", self.component_losses_train)
+                    np.savetxt(self.output_dir + "/d_component_losses_test.txt", self.d_component_losses_test)
+                    np.savetxt(self.output_dir + "/d_component_losses_train.txt", self.d_component_losses_train)
+
+
+                    plot_class = plotting_pinn(self.model, self.fields, self.test_loader, self.cost_per_epoc,
+                                np.array(self.component_losses_test), np.array(self.component_losses_train),
+                                np.array(self.d_component_losses_test), np.array(self.d_component_losses_train),
+                                self.cost_per_epoc_test, np.array(self.different_loss_metrics),
+                                self.output_dir)
+
+                    plot_class.do_all_plots()
 
 
         self.component_losses_train = np.array(self.component_losses_train)
