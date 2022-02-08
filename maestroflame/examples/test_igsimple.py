@@ -2,6 +2,7 @@
 import maestroflame
 import os
 import shutil
+import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -26,17 +27,17 @@ plotfile_prefix = 'flame_*'
 # and plots to a directory. Here you specify that directory.
 output_dir = 'testing123/'
 
+# Check to see if the output directory already exists
+if os.path.exists(output_dir):
+    hash = random.getrandbits(32)
+    new_output_dir = output_dir[:-1] + f"_{hex(hash)}/"
+    print(f"Replacing output directory {output_dir} with {new_output_dir}")
+    #os.rename(output_dir, new_output_dir)
+    output_dir = new_output_dir
+
 # The log file. Everything that is printed during training also goes into this file in case something
 # gets interrupted.
 log_file = output_dir + "log.txt"
-
-# Check to see if the output directory already exists
-if os.path.exists(output_dir):
-    print(f"Overwriting existing output directory: {output_dir}")
-    new_output_dir = output_dir[:-1]+'_old'
-    if os.path.exists(new_output_dir):
-        shutil.rmtree(new_output_dir)
-    os.rename(output_dir, new_output_dir)
 
 
 ## MODEL SETUP
