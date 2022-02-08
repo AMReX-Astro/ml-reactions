@@ -1,6 +1,7 @@
 # Python script to train an ML model for ignition_simple network
 import maestroflame
 import os
+import shutil
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -32,7 +33,10 @@ log_file = output_dir + "log.txt"
 # Check to see if the output directory already exists
 if os.path.exists(output_dir):
     print(f"Overwriting existing output directory: {output_dir}")
-    os.rename(output_dir, output_dir[:-1]+'_old')
+    new_output_dir = output_dir[:-1]+'_old'
+    if os.path.exists(new_output_dir):
+        shutil.rmtree(new_output_dir)
+    os.rename(output_dir, new_output_dir)
 
 
 ## MODEL SETUP
@@ -43,6 +47,8 @@ nrml = NuclearReactionML(data_path, input_prefix, output_prefix, plotfile_prefix
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
+if torch.cuda.is_available():
+    print(f"GPU {torch.cuda.current_device()} of {torch.cuda.device_count()} available devices")
 
 num_epochs = 50
 
