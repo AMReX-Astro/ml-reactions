@@ -46,7 +46,7 @@ class plotting_standard:
 
         plt.figure()
         #N = react_data.output_data.shape[1]
-        colors = matplotlib.cm.rainbow(np.linspace(0, 1, self.nnuc+1))
+        colors = matplotlib.cm.rainbow(np.linspace(0, 1, len(self.fields)))
         #fields = [field[1] for field in yt.load(react_data.output_files[0]).field_list]
         self.model.eval()
 
@@ -72,8 +72,11 @@ class plotting_standard:
                 targets_whole[:,:self.nnuc] = torch.exp(-0.5/targets_whole[:,:self.nnuc])
                 pred[:,:self.nnuc] = torch.exp(-0.5/pred[:,:self.nnuc])
 
-            for i in range(pred.shape[1]):
-                plt.scatter(pred[:, i], targets_whole[:, i], color=colors[i], label=self.fields[i])
+            colors_nm1 = np.tile(colors, (pred.shape[0]-1, 1))
+            for j in range(pred.shape[1]):
+                plt.scatter(pred[0,j], targets_whole[0,j], color=colors[j], label=self.fields[j])
+            plt.scatter(pred[1:, :], targets_whole[1:, :], c=colors_nm1)
+            
             plt.plot(np.linspace(0, 1), np.linspace(0,1), '--', color='orange')
             #plt.legend(yt.load(react_data.output_files[0]).field_list, colors=colors)
             plt.legend(bbox_to_anchor=(1, 1))
@@ -86,8 +89,6 @@ class plotting_standard:
             plt.savefig(self.output_dir + "/prediction_vs_solution_log.png", bbox_inches='tight')
 
         self.model.train()
-
-
 
         plt.close()
 

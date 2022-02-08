@@ -19,7 +19,7 @@ import torch.optim as optim
 import torch.utils.data
 from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
-from .reactdataset import ReactDataset
+from .reactdataset_nodt import ReactDataset
 from .losses import component_loss_f, component_loss_f_L1
 from .plotting import plotting_standard, plotting_pinn
 
@@ -117,26 +117,38 @@ class NuclearReactionML:
                 #make_movie(plotfiles, movie_name='enuc.mp4', var='enuc')
 
                 react_data = ReactDataset(data_path, input_prefix, output_prefix, plotfile_prefix, DEBUG_MODE=DEBUG_MODE)
+                self.nnuc = int(react_data.output_data.shape[1]/2 - 1)
 
                 #Normalize density, temperature, and enuc
-                dens_fac = torch.max(react_data.input_data[:, 14, :])
-                temp_fac = torch.max(react_data.input_data[:, 15, :])
-                enuc_fac = torch.max(react_data.output_data[:, 13, :])
-                react_data.input_data[:, 14, :]  = react_data.input_data[:, 14, :]/dens_fac
-                react_data.input_data[:, 15, :]  = react_data.input_data[:, 15, :]/temp_fac
-                react_data.output_data[:, 13, :] = react_data.output_data[:, 13, :]/enuc_fac
+                dens_fac = torch.max(react_data.input_data[:, self.nnuc+1, :])
+                temp_fac = torch.max(react_data.input_data[:, self.nnuc+2, :])
+                enuc_fac = torch.max(react_data.output_data[:, self.nnuc, :])
+                react_data.input_data[:, self.nnuc+1, :]  = react_data.input_data[:, self.nnuc+1, :]/dens_fac
+                react_data.input_data[:, self.nnuc+2, :]  = react_data.input_data[:, self.nnuc+2, :]/temp_fac
+                react_data.output_data[:, self.nnuc, :] = react_data.output_data[:, self.nnuc, :]/enuc_fac
 
                 #save these factors to a file
                 arr = np.array([dens_fac.item(), temp_fac.item(), enuc_fac.item()])
                 np.savetxt(self.output_dir + 'scaling_factors.txt', arr, header='Density, Temperature, Enuc factors (ordered)')
+                
+#                 # Normalize mass fractions to within a range
+#                 with open(self.output_dir + 'scaling_factors.txt', "ab") as f:
+#                     for i in range(self.nnuc):
+#                         X_min = torch.min(react_data.output_data[:, i, :])
+#                         X_max = torch.max(react_data.output_data[:, i, :])
+#                         react_data.input_data[:, i+1, :] = (react_data.input_data[:, i+1, :] - X_min) / (X_max - X_min)
+#                         react_data.output_data[:, i, :] = (react_data.output_data[:, i, :] - X_min) / (X_max - X_min)
+#                         # save these values to a file
+#                         np.savetxt(f, [X_min, X_max], delimiter=',')
+                
                 if self.LOG_MODE:
                     #take 1/log of mass fractions of species 
-                    react_data.input_data[:,1:14,:] = -0.5/torch.log(react_data.input_data[:,1:14,:])
-                    react_data.output_data[:,:13,:] = -0.5/torch.log(react_data.output_data[:,:13,:])
+                    react_data.input_data[:,1:self.nnuc+1,:] = -0.5/torch.log(react_data.input_data[:,1:self.nnuc+1,:])
+                    react_data.output_data[:,:self.nnuc,:] = -0.5/torch.log(react_data.output_data[:,:self.nnuc,:])
 
                 self.fields = [field for field in yt.load(react_data.output_files[0])._field_list]
                 #truncate to mass fractions + enuc only
-                self.fields = self.fields[:14] 
+                self.fields = self.fields[:self.nnuc+1] 
 
 
                 #percent cut for testing
