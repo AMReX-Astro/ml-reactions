@@ -67,7 +67,11 @@ def selectModel(model_id = 1):
         model = Combine_Net3(4, 16, 8, 8, 8, 8, 8, 8, 8, 8, 16, 3)
     else:
         model = Net(4, 16, 16, 16, 3)
+
     # get model to cuda if possible
+#     # use all available GPUs
+#     if torch.cuda.device_count() > 1:
+#         model = nn.DataParallel(model)
     model.to(device=device)
     return model
 
@@ -93,7 +97,7 @@ optimizer = optim.Adam(model.parameters(), lr=1e-5)
 nrml.train(model, optimizer, num_epochs, criterion)
     
 # need to put model on cpu for plotting
-model.to(device=torch.device("cpu"))
+model.to(torch.device("cpu"))
 
 nrml.plot()
 
@@ -103,5 +107,5 @@ nrml.plot()
 # convert to torch script
 print("Saving model ...")
 net_module = torch.jit.script(model)
-net_module.save("ts_model.pt")
+net_module.save(output_dir + "ts_model.pt")
 print(net_module.code)
