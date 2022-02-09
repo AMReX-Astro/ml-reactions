@@ -160,8 +160,9 @@ class NuclearReactionML:
 
                 train_set, test_set = torch.utils.data.random_split(react_data, [Num_train, Num_test])
 
-                self.train_loader = DataLoader(dataset=train_set, batch_size=16, shuffle=True)
-                self.test_loader = DataLoader(dataset=test_set, batch_size=16, shuffle=True)
+                nbatch = 1 if device == torch.device('cpu') else torch.cuda.device_count()
+                self.train_loader = DataLoader(dataset=train_set, batch_size=64*nbatch, shuffle=True)
+                self.test_loader = DataLoader(dataset=test_set, batch_size=64*nbatch, shuffle=True)
 
 
     def hyperparamter_optimization(self):
@@ -304,8 +305,12 @@ class NuclearReactionML:
                         directory = self.output_dir+'intermediate_output/epoch'+str(epoch)+'/'
                         os.mkdir(directory)
 
+                        try:
+                            state_dict = model.module.state_dict()
+                        except AttributeError:
+                            state_dict = model.state_dict()
 
-                        torch.save(model.state_dict(), directory+'my_model.pt')
+                        torch.save(state_dict, directory+'my_model.pt')
                         np.savetxt(directory + "/cost_per_epoch.txt", self.cost_per_epoc)
                         np.savetxt(directory + "/component_losses_test.txt", self.component_losses_test)
                         np.savetxt(directory + "/component_losses_train.txt", self.component_losses_train)
@@ -331,7 +336,11 @@ class NuclearReactionML:
                     self.logger.write(f"Overwriting file: {file_name}")
                     os.rename(file_name, file_name+'.backup')
 
-                torch.save(model.state_dict(), file_name)
+                try:
+                    state_dict = model.module.state_dict()
+                except AttributeError:
+                    state_dict = model.state_dict()
+                torch.save(state_dict, file_name)
                 np.savetxt(self.output_dir + "/cost_per_epoch.txt", self.cost_per_epoc)
                 np.savetxt(self.output_dir + "/component_losses_test.txt", self.component_losses_test)
                 np.savetxt(self.output_dir + "/component_losses_train.txt", self.component_losses_train)

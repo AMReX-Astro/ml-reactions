@@ -49,11 +49,11 @@ nrml = NuclearReactionML(data_path, input_prefix, output_prefix, plotfile_prefix
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 if torch.cuda.is_available():
-    print(f"GPU {torch.cuda.current_device()} of {torch.cuda.device_count()} available devices")
+    print(f"Using {torch.cuda.device_count()} GPUs!")
 
 num_epochs = 50
 
-def selectModel(model_id = 1):
+def selectModel(model_id = 1, device_opt = device):
     if model_id == 1:
         model = Net_tanh(4, 16, 16, 16, 3)
     elif model_id == 2:
@@ -69,10 +69,10 @@ def selectModel(model_id = 1):
         model = Net(4, 16, 16, 16, 3)
 
     # get model to cuda if possible
-#     # use all available GPUs
-#     if torch.cuda.device_count() > 1:
-#         model = nn.DataParallel(model)
-    model.to(device=device)
+    # use all available GPUs
+    if torch.cuda.device_count() > 1 and device_opt != torch.device('cpu'):
+        model = nn.DataParallel(model)
+    model.to(device_opt)
     return model
 
 def criterion(pred, target): 
@@ -95,17 +95,27 @@ print(f"Model {model_id} \n")
 optimizer = optim.Adam(model.parameters(), lr=1e-5)
 
 nrml.train(model, optimizer, num_epochs, criterion)
-    
-# need to put model on cpu for plotting
-model.to(torch.device("cpu"))
 
 nrml.plot()
 
 
 ## SAVE MODEL
 
+device_cpu = torch.device('cpu')
+
+# reload model onto cpu
+model_cpu = selectModel(model_id, device_cpu)
+print("Loading model onto CPU...")
+
+try:
+    model_cpu.load_state_dict(torch.load(output_dir + "my_model.pt", map_location=device_cpu))
+except RuntimeError:
+    model_cpu.module.load_state_dict(torch.load(output_dir + "my_model.pt", map_location=device_cpu))
+print(model_cpu)
+
 # convert to torch script
-print("Saving model ...")
-net_module = torch.jit.script(model)
+
+print("Saving model...")
+net_module = torch.jit.script(model_cpu)
 net_module.save(output_dir + "ts_model.pt")
 print(net_module.code)

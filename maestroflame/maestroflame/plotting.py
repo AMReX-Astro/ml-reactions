@@ -63,6 +63,8 @@ class plotting_standard:
                     data_whole = torch.cat((data_whole, data))
                     targets_whole = torch.cat((targets_whole, targets))
 
+            data_whole = data_whole.cuda()
+                    
             #for batch_idx, (data, targets) in enumerate(self.test_loader):
             pred = self.model(data_whole)
 
@@ -72,6 +74,9 @@ class plotting_standard:
                 targets_whole[:,:self.nnuc] = torch.exp(-0.5/targets_whole[:,:self.nnuc])
                 pred[:,:self.nnuc] = torch.exp(-0.5/pred[:,:self.nnuc])
 
+            pred = pred.cpu()
+            targets_whole = targets_whole.cpu()
+                
             colors_nm1 = np.tile(colors, (pred.shape[0]-1, 1))
             for j in range(pred.shape[1]):
                 plt.scatter(pred[0,j], targets_whole[0,j], color=colors[j], label=self.fields[j])
