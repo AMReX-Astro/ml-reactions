@@ -75,6 +75,34 @@ def selectModel(model_id = 1, device_opt = device):
     model.to(device_opt)
     return model
 
+def loadModel(model_id, model_path):
+    if model_id == 1:
+        model = Net_tanh(4, 16, 16, 16, 3)
+    elif model_id == 2:
+        model = U_Net(4, 32, 8, 8, 16, 3)
+    elif model_id == 3:
+        model = ResNet(4, 16, 16, 16, 16, 3)
+    elif model_id == 4:
+        model = Cross_ResNet(4, 16, 16, 16, 16, 3)
+    elif model_id == 5:
+        # model = Deep_Net(4, 12, 12, 12, 12, 12, 12, 12, 3)
+        model = Combine_Net3(4, 16, 8, 8, 8, 8, 8, 8, 8, 8, 16, 3)
+    else:
+        model = Net(4, 16, 16, 16, 3)
+
+    try:
+        model.load_state_dict(torch.load(model_path))
+    except RuntimeError:
+        model.module.load_state_dict(torch.load(model_path))
+    print(model)
+
+    # get model to cuda if possible
+    # use all available GPUs
+    if torch.cuda.device_count() > 1 and device != torch.device('cpu'):
+        model = nn.DataParallel(model)
+    model.to(device)
+    return model
+
 def criterion(pred, target): 
     #loss1 = logX_loss(pred, target, nnuc=2)
     #loss2 = 10*loss_mass_fraction_half_L(pred, nnuc=2)
@@ -91,6 +119,7 @@ def criterion(pred, target):
 model_id = 5
 model = selectModel(model_id)
 print(f"Model {model_id} \n")
+# model = loadModel(model_id, model_path="testing123_1416212/my_model.pt")
 
 optimizer = optim.Adam(model.parameters(), lr=1e-5)
 
