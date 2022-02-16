@@ -88,20 +88,24 @@ class ReactDataset(Dataset):
                 #Store data each row corresponds to data acros the grid of a different field.
                 if self.do_flame_cut:
                     flame_loc = self.get_flame_loc(file)
-#                     half = yt.YTArray(2.0, 'cm')
-#                     lbound = yt.YTArray(0.1, 'cm')
-#                     if flame_loc-half > lbound:
-#                         lbound = flame_loc-half
-#                     ad = ds.r[self.xbeg:self.xend, lbound:flame_loc+half]
+                    half = yt.YTArray(0.5, 'cm')
+                    lbound = yt.YTArray(0.1, 'cm')
+                    if flame_loc-half > lbound:
+                        lbound = flame_loc-half
+                    ad_flame = ds.r[self.xbeg:self.xend, lbound:flame_loc+half]
                     ad = ds.r[self.xbeg:self.xend, :]
                 else:
+                    ad_flame = []
                     ad = ds.all_data()
 
                 for i,field in enumerate(ds._field_list):
+                    # add repeating data of the flame itself (nf times)
+                    nf = 3
                     if i == 0:
-                        data = np.zeros([len(ds._field_list), len(ad[field])])
+                        data = np.zeros([len(ds._field_list), len(ad[field]) + nf*len(ad_flame[field])])
 
-                    data[i,:] = np.array(ad[field])
+                    data_repeat = np.tile(np.array(ad_flame[field]), nf)
+                    data[i,:] = np.concatenate((np.array(ad[field]), data_repeat))
             except:
                 pass
 
@@ -134,15 +138,16 @@ class ReactDataset(Dataset):
                     #We need to get more data.
                     elif data.shape[2] < NUM_GRID_CELLS:
                         #double size of cut
-#                         if flame_loc-2*half > lbound:
-#                             lbound = flame_loc-2*half
-#                         ad = ds.r[self.xbeg:self.xend, lbound:flame_loc+2*half]
+                        if flame_loc-2*half > lbound:
+                            lbound = flame_loc-2*half
+                        ad_flame = ds.r[self.xbeg:self.xend, lbound:flame_loc+2*half]
                         ad = ds.r[self.xbeg:self.xend, :]
                         for i,field in enumerate(ds._field_list):
                             if i == 0:
-                                data = np.zeros([len(ds._field_list), len(ad[field])])
+                                data = np.zeros([len(ds._field_list), len(ad[field]) + nf*len(ad_flame[field])])
 
-                            data[i,:] = np.array(ad[field])
+                            data_repeat = np.tile(np.array(ad_flame[field]), nf)
+                            data[i,:] = np.concatenate((np.array(ad[field]), data_repeat))
                         data = torch.from_numpy(data.reshape((1,data.shape[0],data.shape[1])))
                         if inputs:
                             dt_tensor = dt*torch.ones([1,1,NUM_GRID_CELLS])
@@ -242,7 +247,7 @@ class ReactDataset(Dataset):
         flame_loc = profile.x[index]
         # rs.append(flame_loc)
 
-        half = yt.YTArray(2.0, 'cm')
+        half = yt.YTArray(0.5, 'cm')
         lbound = yt.YTArray(0.1, 'cm')
         if flame_loc-half > lbound:
             lbound = flame_loc-half

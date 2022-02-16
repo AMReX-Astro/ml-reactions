@@ -140,7 +140,7 @@ class NuclearReactionML:
 #                         react_data.output_data[:, i, :] = (react_data.output_data[:, i, :] - X_min) / (X_max - X_min)
 #                         # save these values to a file
 #                         np.savetxt(f, [X_min, X_max], delimiter=',')
-                
+
                 if self.LOG_MODE:
                     #take 1/log of mass fractions of species 
                     react_data.input_data[:,1:self.nnuc+1,:] = -0.5/torch.log(react_data.input_data[:,1:self.nnuc+1,:])
@@ -155,10 +155,13 @@ class NuclearReactionML:
                 percent_test = 10
                 N = len(react_data)
 
+                # random seed
+                randseed = 42
+
                 Num_test  = int(N*percent_test/100)
                 Num_train = N-Num_test
 
-                train_set, test_set = torch.utils.data.random_split(react_data, [Num_train, Num_test])
+                train_set, test_set = torch.utils.data.random_split(react_data, [Num_train, Num_test], generator=torch.Generator().manual_seed(randseed))
 
                 nbatch = 1 if device == torch.device('cpu') else torch.cuda.device_count()
                 self.train_loader = DataLoader(dataset=train_set, batch_size=64*nbatch, shuffle=True)
