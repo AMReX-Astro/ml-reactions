@@ -205,9 +205,9 @@ def loss_pinn(input, prediction, target, enuc_fac, enuc_dot_fac,
 def loss_mass_fraction(prediction, nnuc=13):
     return 10* torch.abs(1 - torch.sum(prediction[:, :nnuc]))
 
-def loss_mass_fraction_log(prediction, nnuc=13):
+def loss_mass_fraction_log(prediction, totsum=1.0, nnuc=13):
     L = nn.MSELoss()
-    total = torch.ones(prediction.shape[0], device=device)
+    total = totsum * torch.ones(prediction.shape[0], device=device)
     mass_fraction = torch.exp(-0.5/prediction[:, :nnuc])
     
     return L(torch.sum(mass_fraction, 1), total)
