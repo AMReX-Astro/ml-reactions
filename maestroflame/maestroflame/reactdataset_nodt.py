@@ -31,6 +31,7 @@ class ReactDataset(Dataset):
         self.do_flame_cut=True
         self.xbeg = data_range * 0.1
         self.xend = self.xbeg + 0.01
+        self.nf = 3   # how many extra local flame data to append to dataset
 
         self.input_files  = self.get_files(data_path, input_prefix)
         self.output_files = self.get_files(data_path, output_prefix)
@@ -100,12 +101,14 @@ class ReactDataset(Dataset):
 
                 for i,field in enumerate(ds._field_list):
                     # add repeating data of the flame itself (nf times)
-                    nf = 3
                     if i == 0:
-                        data = np.zeros([len(ds._field_list), len(ad[field]) + nf*len(ad_flame[field])])
+                        data = np.zeros([len(ds._field_list), len(ad[field]) + self.nf*len(ad_flame[field])])
 
-                    data_repeat = np.tile(np.array(ad_flame[field]), nf)
-                    data[i,:] = np.concatenate((np.array(ad[field]), data_repeat))
+                    if self.nf > 0:
+                        data_repeat = np.tile(np.array(ad_flame[field]), self.nf)
+                        data[i,:] = np.concatenate((np.array(ad[field]), data_repeat))
+                    else:
+                        data[i,:] = np.array(ad[field])
             except:
                 pass
 
@@ -144,10 +147,13 @@ class ReactDataset(Dataset):
                         ad = ds.r[self.xbeg:self.xend, :]
                         for i,field in enumerate(ds._field_list):
                             if i == 0:
-                                data = np.zeros([len(ds._field_list), len(ad[field]) + nf*len(ad_flame[field])])
+                                data = np.zeros([len(ds._field_list), len(ad[field]) + self.nf*len(ad_flame[field])])
 
-                            data_repeat = np.tile(np.array(ad_flame[field]), nf)
-                            data[i,:] = np.concatenate((np.array(ad[field]), data_repeat))
+                            if self.nf > 0:
+                                data_repeat = np.tile(np.array(ad_flame[field]), self.nf)
+                                data[i,:] = np.concatenate((np.array(ad[field]), data_repeat))
+                            else:
+                                data[i,:] = np.array(ad[field])
                         data = torch.from_numpy(data.reshape((1,data.shape[0],data.shape[1])))
                         if inputs:
                             dt_tensor = dt*torch.ones([1,1,NUM_GRID_CELLS])
