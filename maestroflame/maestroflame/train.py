@@ -122,7 +122,7 @@ class NuclearReactionML:
                 #Normalize density, temperature, and enuc
                 dens_fac = torch.max(react_data.input_data[:, self.nnuc+1, :])
                 temp_fac = torch.max(react_data.input_data[:, self.nnuc+2, :])
-                enuc_fac = torch.max(react_data.output_data[:, self.nnuc, :])
+                enuc_fac = 1.1 * torch.max(react_data.output_data[:, self.nnuc, :])
                 react_data.input_data[:, self.nnuc+1, :]  = react_data.input_data[:, self.nnuc+1, :]/dens_fac
                 react_data.input_data[:, self.nnuc+2, :]  = react_data.input_data[:, self.nnuc+2, :]/temp_fac
                 react_data.output_data[:, self.nnuc, :] = react_data.output_data[:, self.nnuc, :]/enuc_fac
@@ -131,15 +131,15 @@ class NuclearReactionML:
                 arr = np.array([dens_fac.item(), temp_fac.item(), enuc_fac.item()])
                 np.savetxt(self.output_dir + 'scaling_factors.txt', arr, header='Density, Temperature, Enuc factors (ordered)')
                 
-#                 # Normalize mass fractions to within a range
-#                 with open(self.output_dir + 'scaling_factors.txt', "ab") as f:
-#                     for i in range(self.nnuc):
-#                         X_min = torch.min(react_data.output_data[:, i, :])
-#                         X_max = torch.max(react_data.output_data[:, i, :])
+                # Normalize mass fractions to within a range
+                with open(self.output_dir + 'scaling_factors.txt', "ab") as f:
+                    for i in range(self.nnuc):
+                        X_min = torch.min(react_data.output_data[:, i, :])
+                        X_max = torch.max(react_data.output_data[:, i, :])
 #                         react_data.input_data[:, i+1, :] = (react_data.input_data[:, i+1, :] - X_min) / (X_max - X_min)
 #                         react_data.output_data[:, i, :] = (react_data.output_data[:, i, :] - X_min) / (X_max - X_min)
-#                         # save these values to a file
-#                         np.savetxt(f, [X_min, X_max], delimiter=',')
+                        # save these values to a file
+                        np.savetxt(f, [X_min, X_max], delimiter=',')
 
                 if self.LOG_MODE:
                     #take 1/log of mass fractions of species 

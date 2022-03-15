@@ -51,8 +51,14 @@ def log_loss(prediction, target, nnuc=13):
         factor = 1000 # a lot
         return enuc_loss + factor*L(X, X_target)
 
+    elif torch.sum(X == 0) > 0:
+        return enuc_loss + L(X, X_target)
+    
     else:
-        barrier = torch.tensor([.1], device=device)
+        Xlog = -0.3/torch.log10(X)
+        Xlog_target = -0.3/torch.log10(X_target)
+        
+        barrier = torch.tensor([.001], device=device)
         value = torch.tensor([0.], device=device)
 
         #greater than barrier we apply mse loss
@@ -60,7 +66,66 @@ def log_loss(prediction, target, nnuc=13):
         A = my_heaviside(X_target - barrier, value)
         B = -my_heaviside(X_target - barrier, value) + 1
 
-        X_loss =  torch.sum(A * L(X, X_target) + B* torch.abs(.01*L(torch.log(X), torch.log(X_target))))
+        X_loss =  torch.sum(A * L(X, X_target) + B * 0.01 * L(Xlog, Xlog_target))
+
+    return enuc_loss + X_loss
+
+def log_loss_w_enuc(prediction, target, nnuc=13):
+    # Log Loss Function for standard ML.
+    # If there are negative values in X we use MSE
+    #Enuc stays with MSE because its normalized
+
+    #X is not allowed to be negative. Enuc is
+    X = prediction[:, :nnuc]
+    X_target = target[:, :nnuc]
+    enuc = prediction[:, nnuc]
+    enuc_target = target[:, nnuc]
+
+    L = nn.MSELoss()
+    F = nn.L1Loss()
+
+    if torch.sum(enuc <= 0) > 0:
+        enuc_loss = L(enuc, enuc_target) + F(torch.sign(enuc), torch.sign(enuc_target))
+
+    else:
+        alpha = 1.0  # prevents computing log(enuc=1)
+        
+        elog = -0.1/torch.log10(alpha*enuc)
+        elog_target = -0.1/torch.log10(alpha*enuc_target)
+        
+        barrier = torch.tensor([.1], device=device)
+        value = torch.tensor([0.], device=device)
+
+        #greater than barrier we apply mse loss
+        #less then barier we apply log of mse loss
+        A = my_heaviside(enuc_target - barrier, value)
+        B = -my_heaviside(enuc_target - barrier, value) + 1
+
+        enuc_loss =  torch.sum(A * L(enuc, enuc_target) + B * 0.1 * L(elog, elog_target))
+
+    
+    #if there are negative numbers we cant use log on mass fractions
+    if torch.sum(X < 0) > 0:
+        #how much do we hate negative numbers?
+        factor = 1000 # a lot
+        return enuc_loss + factor*L(X, X_target)
+
+    elif torch.sum(X == 0) > 0:
+        return enuc_loss + L(X, X_target)
+    
+    else:
+        Xlog = -0.3/torch.log10(X)
+        Xlog_target = -0.3/torch.log10(X_target)
+        
+        barrier = torch.tensor([.001], device=device)
+        value = torch.tensor([0.], device=device)
+
+        #greater than barrier we apply mse loss
+        #less then barier we apply log of mse loss
+        A = my_heaviside(X_target - barrier, value)
+        B = -my_heaviside(X_target - barrier, value) + 1
+
+        X_loss =  torch.sum(A * L(X, X_target) + B * 0.01 * L(Xlog, Xlog_target))
 
     return enuc_loss + X_loss
 

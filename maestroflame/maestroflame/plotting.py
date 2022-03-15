@@ -91,6 +91,8 @@ class plotting_standard:
 
             plt.yscale("log")
             plt.xscale("log")
+            plt.ylim([1.e-28, 5.e0])
+            plt.xlim([1.e-16, 5.e0])
             plt.savefig(self.output_dir + "/prediction_vs_solution_log.png", bbox_inches='tight')
 
         self.model.train()
