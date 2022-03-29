@@ -71,16 +71,19 @@ class plotting_standard:
             if self.LOG_MODE:
                 # convert all mass fractions back from their log form
                 data_whole[:,:self.nnuc] = torch.exp(-0.5/data_whole[:,:self.nnuc])
-                targets_whole[:,:self.nnuc] = torch.exp(-0.5/targets_whole[:,:self.nnuc])
-                pred[:,:self.nnuc] = torch.exp(-0.5/pred[:,:self.nnuc])
+#                 targets_whole[:,:self.nnuc] = torch.exp(-0.5/targets_whole[:,:self.nnuc])
+#                 pred[:,:self.nnuc] = torch.exp(-0.5/pred[:,:self.nnuc])
 
             pred = pred.cpu()
             targets_whole = targets_whole.cpu()
-                
-            colors_nm1 = np.tile(colors, (pred.shape[0]-1, 1))
-            for j in range(pred.shape[1]):
-                plt.scatter(pred[0,j], targets_whole[0,j], color=colors[j], label=self.fields[j])
-            plt.scatter(pred[1:, :], targets_whole[1:, :], c=colors_nm1)
+
+            if targets_whole.shape[1] <= 1:
+                plt.scatter(pred, targets_whole, color=colors[0], label=self.fields)
+            else:
+                colors_nm1 = np.tile(colors, (pred.shape[0]-1, 1))
+                for j in range(pred.shape[1]):
+                    plt.scatter(pred[0,j], targets_whole[0,j], color=colors[j], label=self.fields[j])
+                plt.scatter(pred[1:, :], targets_whole[1:, :], c=colors_nm1)
             
             plt.plot(np.linspace(0, 1), np.linspace(0,1), '--', color='orange')
             #plt.legend(yt.load(react_data.output_files[0]).field_list, colors=colors)
@@ -91,7 +94,7 @@ class plotting_standard:
 
             plt.yscale("log")
             plt.xscale("log")
-            plt.ylim([1.e-28, 5.e0])
+            plt.ylim([1.e-18, 5.e0])
             plt.xlim([1.e-16, 5.e0])
             plt.savefig(self.output_dir + "/prediction_vs_solution_log.png", bbox_inches='tight')
 

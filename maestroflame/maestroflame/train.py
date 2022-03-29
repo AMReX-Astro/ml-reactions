@@ -19,7 +19,7 @@ import torch.optim as optim
 import torch.utils.data
 from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
-from .reactdataset_nodt import ReactDataset
+from .reactdataset_enuc import ReactDataset
 from .losses import component_loss_f, component_loss_f_L1
 from .plotting import plotting_standard, plotting_pinn
 
@@ -131,15 +131,15 @@ class NuclearReactionML:
                 arr = np.array([dens_fac.item(), temp_fac.item(), enuc_fac.item()])
                 np.savetxt(self.output_dir + 'scaling_factors.txt', arr, header='Density, Temperature, Enuc factors (ordered)')
                 
-                # Normalize mass fractions to within a range
-                with open(self.output_dir + 'scaling_factors.txt', "ab") as f:
-                    for i in range(self.nnuc):
-                        X_min = torch.min(react_data.output_data[:, i, :])
-                        X_max = torch.max(react_data.output_data[:, i, :])
-#                         react_data.input_data[:, i+1, :] = (react_data.input_data[:, i+1, :] - X_min) / (X_max - X_min)
-#                         react_data.output_data[:, i, :] = (react_data.output_data[:, i, :] - X_min) / (X_max - X_min)
-                        # save these values to a file
-                        np.savetxt(f, [X_min, X_max], delimiter=',')
+#                 # Normalize mass fractions to within a range
+#                 with open(self.output_dir + 'scaling_factors.txt', "ab") as f:
+#                     for i in range(self.nnuc):
+#                         X_min = torch.min(react_data.output_data[:, i, :])
+#                         X_max = torch.max(react_data.output_data[:, i, :])
+# #                         react_data.input_data[:, i+1, :] = (react_data.input_data[:, i+1, :] - X_min) / (X_max - X_min)
+# #                         react_data.output_data[:, i, :] = (react_data.output_data[:, i, :] - X_min) / (X_max - X_min)
+#                         # save these values to a file
+#                         np.savetxt(f, [X_min, X_max], delimiter=',')
 
                 if self.LOG_MODE:
                     #take 1/log of mass fractions of species 
@@ -147,8 +147,8 @@ class NuclearReactionML:
                     react_data.output_data[:,:self.nnuc,:] = -0.5/torch.log(react_data.output_data[:,:self.nnuc,:])
 
                 self.fields = [field for field in yt.load(react_data.output_files[0])._field_list]
-                #truncate to mass fractions + enuc only
-                self.fields = self.fields[:self.nnuc+1] 
+                #truncate to enuc only
+                self.fields = self.fields[self.nnuc] 
 
 
                 #percent cut for testing
