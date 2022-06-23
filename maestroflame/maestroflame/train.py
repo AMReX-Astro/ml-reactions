@@ -143,8 +143,8 @@ class NuclearReactionML:
 
                 if self.LOG_MODE:
                     #take 1/log of mass fractions of species 
-                    react_data.input_data[:,1:self.nnuc+1,:] = -0.5/torch.log(react_data.input_data[:,1:self.nnuc+1,:])
-                    react_data.output_data[:,:self.nnuc,:] = -0.5/torch.log(react_data.output_data[:,:self.nnuc,:])
+                    react_data.input_data[:,1:self.nnuc+1,:] = -1.0/torch.log(react_data.input_data[:,1:self.nnuc+1,:])
+                    react_data.output_data[:,:self.nnuc,:] = -1.0/torch.log(react_data.output_data[:,:self.nnuc,:])
 
                 self.fields = [field for field in yt.load(react_data.output_files[0])._field_list]
                 #truncate to enuc only

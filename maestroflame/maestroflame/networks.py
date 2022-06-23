@@ -124,8 +124,9 @@ class Cross_ResNet(nn.Module):
         return x5
 
 class Combine_Net3(nn.Module):
-    def __init__(self, input_size, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, output_size):
+    def __init__(self, input_size, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, output_size, relu=False):
         super().__init__()
+        self.relu = relu
         self.fc1 = nn.Linear(input_size, h1)
         self.ac1 = nn.Tanh()
         self.fc2 = nn.Linear(h1, h2)
@@ -147,6 +148,7 @@ class Combine_Net3(nn.Module):
         self.fc10 = nn.Linear(h9, h10)
         self.ac10 = nn.Tanh()
         self.fc11 = nn.Linear(h10, output_size)
+        self.ac11 = nn.ReLU()
         
         # Resnet connections 
         self.fc1to4 = nn.Linear(h1, h4)
@@ -170,6 +172,8 @@ class Combine_Net3(nn.Module):
         x9 = self.ac9(self.fc9(x8))
         x10 = self.ac10(self.fc10(x9) + self.fc7to10(x7) + self.fc1to10(x1))
         x11 = self.fc11(x10) + self.fcio(x)
+        if self.relu:
+            x11 = self.ac11(x11)
         return x11
 
 class Deep_Net(nn.Module):
